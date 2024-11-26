@@ -1,0 +1,2265 @@
+---
+title: "APRENDIZAJE AUTOMATICO Y CIENCIA DE DATOS"
+subtitle: "ENTREGA 1: CONTEXTO Y EXPLORACION DE DATOS"
+author:
+  - name: "Cesar Augusto Prieto Sarmiento"
+    affiliation: |
+      Universidad Nacional de Colombia  
+      Departamento de Estadística
+    email: "ceprieto@unal.edu.co"
+website: "https://github.com/CapStats-ML"
+output:
+  html_document:
+    toc: false
+    fig_caption: true
+    template: template.html
+    code_folding: hide
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,         # Mostrar el código en el documento
+  warning = FALSE,     # Ocultar warnings
+  message = FALSE,     # Ocultar mensajes
+  fig.width = 10,       # Ancho de las figuras
+  fig.height = 7,      # Alto de las figuras
+  fig.align = 'center' # Alinear las figuras en el centro
+)
+```
+
+```{r setwd, message=FALSE, warning=FALSE, include=FALSE}
+setwd("~/REPOS GIT/Ciencia_de_Datos/Entregas/Entrega1/Untitled")
+```
+
+
+```{r libraries, message=FALSE, warning=FALSE, include=FALSE}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(RColorBrewer)
+library(kableExtra)
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+```
+
+# Descripción de la base de datos
+
+La base de datos fue tomada de el repositorio de Dataset's de Hugging Face <https://huggingface.co/datasets/imodels/diabetes-readmission> Esta a su vez tiene un link directo a la página de Machine Learning Repository el cual contiene la ficha tecnica completa de la base.
+
+Este dataset recopila información de diez años (1999-2008) de atención clínica en 130 hospitales y redes integradas de servicios de salud en los Estados Unidos. Contiene un total de **101,766 registros** correspondientes a pacientes diagnosticados con diabetes que tuvieron estancias hospitalarias de hasta 14 días. Cada fila representa un encuentro hospitalario y contiene información detallada sobre pruebas de laboratorio, medicamentos administrados y diversos aspectos del diagnóstico y tratamiento.
+
+## Características Principales
+- **Número de Registros**: 101,766.
+- **Número de Variables**: 151.
+- **Tipo de Variables**: Categóricas e Integer.
+- **Tareas Asociadas**: Clasificación y Clustering.
+- **Ámbito Temático**: Salud y Medicina.
+- **Instancias Representadas**: Registros de pacientes hospitalizados diagnosticados con diabetes.
+
+## Criterios de Inclusión
+Para formar parte de esta base de datos, cada registro debe cumplir con los siguientes criterios:
+
+1. **Encuentros hospitalarios**: El registro corresponde a una admisión hospitalaria.
+2. **Diagnóstico de diabetes**: Se incluye cualquier diagnóstico relacionado con diabetes en el sistema.
+3. **Duración de la estancia**: Entre 1 y 14 días.
+4. **Pruebas de laboratorio**: Se realizaron análisis clínicos durante la estancia.
+5. **Administración de medicamentos**: Incluye la administración de medicamentos durante el encuentro.
+ 
+# Contexto 
+
+El manejo hospitalario de pacientes con diabetes es un desafío importante debido a las múltiples complicaciones asociadas con la enfermedad. Este dataset busca abordar una problemática específica: **la readmisión temprana dentro de los 30 días posteriores al alta hospitalaria**. 
+
+La diabetes es una enfermedad crónica que requiere una atención continua y adecuada. A pesar de la evidencia sólida que respalda el impacto positivo de las intervenciones preventivas y terapéuticas, existe una brecha significativa entre las prácticas ideales y la atención real proporcionada en los hospitales. Este problema puede atribuirse, en parte, a una gestión inconsistente de la diabetes en los entornos hospitalarios, particularmente en el control glucémico.
+
+El impacto de una atención inadecuada va más allá de los resultados clínicos inmediatos. Los pacientes enfrentan un mayor riesgo de complicaciones, mientras que los hospitales deben absorber costos adicionales derivados de readmisiones evitables.
+
+
+# Antecedentes 
+
+El análisis de esta base de datos se publicó en el artículo titulado *"Impact of HbA1c Measurement on Hospital Readmission Rates: Analysis of 70,000 Clinical Database Patient Records"*, escrito por Beata Strack y colaboradores, y publicado en la revista BioMed Research International en 2014.
+
+El objetivo principal del análisis fue investigar los factores asociados con la readmisión temprana de pacientes hospitalizados con diabetes, con un enfoque particular en la medición del HbA1c, un marcador clave para el control glucémico. Este análisis se basa en más de 50 variables que describen las características de los pacientes, los tratamientos realizados y los resultados hospitalarios.
+
+Algunos de los atributos más destacados del dataset incluyen:
+
+- **Datos demográficos**: Número de paciente, raza, género y edad.
+- **Datos clínicos**: Tipo de admisión, tiempo en el hospital, especialidad médica del médico tratante.
+- **Pruebas y tratamientos**: Número de análisis de laboratorio realizados, resultados de pruebas de HbA1c, medicamentos administrados, y tratamientos relacionados con la diabetes.
+- **Historial médico**: Número de visitas a consultas externas, hospitalizaciones y emergencias en el año anterior a la admisión actual.
+
+No se recomiendan divisiones específicas de datos, por lo que pueden emplearse estrategias estándar como la división en conjuntos de entrenamiento, validación y prueba según el modelo analítico.
+
+Este reporte busca proporcionar una visión integral del dataset, estableciendo las bases para explorar y modelar los factores determinantes de las readmisiones hospitalarias de pacientes con diabetes.
+
+# Analisis Univariado
+
+```{r load_data, message=FALSE, warning=FALSE, include=FALSE}
+setwd("~/REPOS GIT/Ciencia_de_Datos/Datos")
+test <- read_csv("test.csv")
+train <- read_csv("train.csv")
+```
+
+```{r paste_data, message=FALSE, warning=FALSE, include=FALSE}
+data <- rbind(test, train)
+```
+
+Al explorar la base de datos que tenemos, podemos observar que esta cuenta con 101,766 registros y 47 variables. A continuación, se presenta un resumen de las variables presentes en el dataset:
+
+```{r str_data, message=FALSE, warning=FALSE, echo=FALSE}
+
+str(data)
+
+```
+
+
+Podemos observar como hay algunas variables que son de tipo factor y otras de tipo integer. Para darnos una idea de la configuracion de la base de datos, a continuación, se presenta una muestra de los primeros 10 registros y 7 columnas del dataset:
+
+```{r head_data, message=FALSE, warning=FALSE, echo=FALSE}
+
+kable(head(data[,1:7], 10), caption = "Primeros 10 registros y 7 columnas del dataset")
+
+```
+
+## Variables Categóricas
+
+A continuacion, se propuso la union de las varibles que hacen referencia a lo mismo, para tener una mejor visualizacion de los datos y poder hacer un analisis mas detallado de los mismos, se presenta un análisis de cada variable categórica presente en el dataset, incluyendo su distribución de frecuencias y niveles asociados:
+
+### DiabetesMed
+
+La variable "diabetesMed" indica si los pacientes reciben medicación para la diabetes. 
+
+```{r Unif-DiabetesMed, message=FALSE, warning=FALSE, echo=FALSE}
+Prop_diabetesMed <- sapply(data["diabetesMed"], mean)
+
+T_Proportion_diabetesMed <- data.frame(
+  Variable = "diabetesMed",
+  Proporcion = as.vector(Prop_diabetesMed)
+)
+
+T_Proportion_diabetesMed <- T_Proportion_diabetesMed[order(T_Proportion_diabetesMed$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Proportion_diabetesMed, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en DiabetesMed"
+)
+```
+
+Una proporción significativa (77.00%) de los pacientes está bajo tratamiento, lo que refleja que la mayoría de los casos en la muestra requieren manejo farmacológico para controlar la diabetes.
+
+```{r plot-DiabetesMed, message=FALSE, warning=FALSE}
+T_Proportion_diabetesMed %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE PACIENTES QUE RECIBEN MEDICAMENTOS PARA LA DIABETES", 
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+### Change
+
+La variable "change" indica si hubo modificaciones en la medicación de los pacientes durante su atención. 
+
+```{r Unif-Change, message=FALSE, warning=FALSE, echo=FALSE}
+Prop_change <- sapply(data["change"], mean)
+
+T_Prob_change <- data.frame(
+  Variable = "change",
+  Proporcion = as.vector(Prop_change)
+)
+
+T_Prop_change <- T_Prob_change[order(T_Prob_change$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_change, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Change"
+)
+
+```
+
+Una proporción considerable (46.19%) de los pacientes experimentó cambios en su tratamiento, lo que sugiere ajustes frecuentes en el manejo médico para optimizar el control de la diabetes u otras condiciones relacionadas.
+
+```{r plot-Change, message=FALSE, warning=FALSE}
+T_Prop_change %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN CHANGE", 
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+
+### Raza
+
+La variable "raza" muestra la distribución racial de los individuos en el conjunto de datos, lo cual es relevante para entender la diversidad y las posibles disparidades en ciertos contextos, como la salud o la educación.
+
+
+```{r Unif-Raza , message=FALSE, warning=FALSE, echo=FALSE}
+Raza <- c("race:AfricanAmerican", "race:Asian", "race:Caucasian", "race:Hispanic", "race:Other")
+
+Prop_Raza <- sapply(data[Raza], mean)
+
+T_Prop_Raza <- data.frame(
+  Variable = Raza,
+  Proporcion = as.vector(Prop_Raza)
+)
+
+T_Prop_Raza <- T_Prop_Raza[order(T_Prop_Raza$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_Raza, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Raza"
+)
+```
+
+La categoría caucásica representa la mayoría (74.78%), seguida por la afroamericana (18.88%), mientras que las razas "otros", hispano y asiático tienen una proporción mucho menor, lo que sugiere una posible falta de representación o sesgo en la muestra hacia estos grupos, todo esto se puede ver en la siguiente grafica
+
+
+```{r plot-Raza, message=FALSE, warning=FALSE}
+
+T_Prop_Raza %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN RAZA", 
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+
+```{r Raza-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Raza = case_when(
+    `race:AfricanAmerican` == 1 ~ "Afroamericano",
+    `race:Asian` == 1 ~ "Asiático",
+    `race:Caucasian` == 1 ~ "Caucásico",
+    `race:Hispanic` == 1 ~ "Hispano",
+    `race:Other` == 1 ~ "Otro",
+    TRUE ~ "Otro"
+  ))
+
+data <- data %>%
+  select(-`race:AfricanAmerican`, -`race:Asian`, -`race:Caucasian`, -`race:Hispanic`, -`race:Other`)
+
+```
+
+### Genero
+
+La variable "género" refleja la distribución entre hombres y mujeres en el conjunto de datos, lo cual es importante para identificar posibles diferencias de género en análisis relacionados con salud, oportunidades o comportamientos.
+
+
+```{r Unif-Genero, message=FALSE, warning=FALSE, echo=FALSE}
+Genero <- c("gender:Female", "gender:Male")
+
+Prop_Genero <- sapply(data[Genero], mean)
+
+T_Prop_Genero <- data.frame(
+  Variable = Genero,
+  Proporcion = as.vector(Prop_Genero)
+)
+
+T_Porp_Genero <- T_Prop_Genero[order(T_Prop_Genero$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_Genero, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Genero"
+)
+
+```
+
+La categoría femenina representa el 53.76%, mientras que los hombres constituyen el 46.24%, lo que sugiere una distribución casi equitativa entre ambos géneros en la muestra.
+
+
+```{r plot-Genero, message=FALSE, warning=FALSE}
+T_Prop_Genero %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = c("steelblue", "red")) +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN GENERO", 
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+```{r Genero-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Genero = case_when(
+    `gender:Female` == 1 ~ "Femenino",  # Agregamos la coma aquí
+    `gender:Male` == 1 ~ "Masculino",
+    TRUE ~ "Desconocido"  # Agregar un caso por si no cumple con ninguno de los anteriores
+  ))
+
+data <- data %>%
+  select(-`gender:Female`, -`gender:Male`)
+
+```
+
+
+### Edad
+
+La variable "edad" muestra la distribución de las personas en diferentes rangos de edad, lo cual es crucial para analizar cómo varían ciertos factores según la edad. 
+
+
+```{r Unif-Edad, message=FALSE, warning=FALSE, echo=FALSE}
+
+Edad <- c("age:[0-10)", "age:[10-20)", "age:[20-50)", "age:[50-70)", "age:70+")
+
+Prop_Edad <- sapply(data[Edad], mean)
+
+T_Prop_Edad <- data.frame(
+  Variable = Edad,
+  Proporcion = as.vector(Prop_Edad)
+)
+
+T_Prop_Edad <- T_Prop_Edad[order(T_Prop_Edad$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_Edad, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Edad"
+)
+
+
+```
+
+La mayoría de los individuos se encuentran en el grupo de 70+ años (45.26%) y en el grupo de 50-70 años (39.05%). Los grupos más jóvenes, como el de 20-50 años, representan una proporción más pequeña (14.85%), mientras que los rangos de 10-20 años y 0-10 años tienen representaciones mínimas, lo que podría indicar que los datos están más enfocados en adultos mayores.
+
+
+```{r plot-Edad, message=FALSE, warning=FALSE}
+T_Prop_Edad %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN EDAD", 
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+```{r Edad-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Edad = case_when(
+    `age:[0-10)` == 1 ~ "0-10",
+    `age:[10-20)` == 1 ~ "10-20",
+    `age:[20-50)` == 1 ~ "20-50",
+    `age:[50-70)` == 1 ~ "50-70",
+    `age:70+` == 1 ~ "70+",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`age:[0-10)`, -`age:[10-20)`, -`age:[20-50)`, -`age:[50-70)`, -`age:70+`)
+
+```
+
+### Tipo Admision
+
+La variable "tipo de admisión" indica las razones por las cuales los pacientes ingresan al sistema de salud, lo que es importante para entender la urgencia y la naturaleza de los casos.
+
+
+```{r Unif-TipoAdmision, message=FALSE, warning=FALSE, echo=FALSE}
+
+Admision <- c("admission_type_id:Elective", "admission_type_id:Emergency",
+              "admission_type_id:New Born", "admission_type_id:Trauma Center")
+
+Prop_Admision <- sapply(data[Admision], mean)
+
+T_Prop_Admision <- data.frame(
+  Variable = Admision,
+  Proporcion = as.vector(Prop_Admision)
+)
+
+T_Prop_Admision <- T_Prop_Admision[order(T_Prop_Admision$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_Admision, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Tipo de Admision"
+)
+
+
+```
+
+La mayoría de las admisiones son por emergencia, representando el 71.21%, seguido por las admisiones electivas (18.54%). Las admisiones por trauma y por recién nacidos son mínimas, con proporciones de 0.02% y 0.01% respectivamente, lo que sugiere que los casos más urgentes son los más comunes en esta muestra.
+
+
+```{r plot-TipoAdmision, message=FALSE, warning=FALSE}
+T_Prop_Admision %>% 
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN TIPO DE ADMISION",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+```{r TipoAdmision-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Admision = case_when(
+    `admission_type_id:Elective` == 1 ~ "Electiva",
+    `admission_type_id:Emergency` == 1 ~ "Emergencia",
+    TRUE ~ "Otro"
+  ))
+
+data <- data %>%
+  select(-`admission_type_id:Elective`, -`admission_type_id:Emergency`, -`admission_type_id:New Born`,
+         -`admission_type_id:Trauma Center`)
+```
+
+### Discharge
+
+La variable "disposición de alta" refleja el destino de los pacientes al ser dados de alta, lo cual es relevante para entender el seguimiento y los cuidados posteriores.
+
+
+```{r Unif-Discharge, message=FALSE, warning=FALSE, echo=FALSE}
+
+Discharge <- c("discharge_disposition_id:Discharged to Home",
+               "discharge_disposition_id:Other")
+
+Prop_Discharge <- sapply(data[Discharge], mean)
+
+
+T_Prop_Discharge <- data.frame(
+  Variable = Discharge,
+  Proporcion = as.vector(Prop_Discharge)
+)
+
+T_Prop_Discharge <- T_Prop_Discharge[order(T_Prop_Discharge$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_Discharge, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Discharge"
+)
+
+```
+
+La mayoría de los pacientes (72.37%) son dados de alta para regresar a casa, mientras que una proporción significativa (23.03%) es clasificada bajo "otros", lo que podría indicar una variedad de destinos, como instituciones de cuidado o traslados a otros centros médicos.
+
+
+```{r plot-Discharge, message=FALSE, warning=FALSE}
+T_Prop_Discharge %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN DISCHARGE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+```{r Discharge-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Discharge = case_when(
+    `discharge_disposition_id:Discharged to Home` == 1 ~ "Dado de alta a casa",
+    TRUE ~ "Otro"
+  ))
+
+data <- data %>%
+  select(-`discharge_disposition_id:Discharged to Home`, -`discharge_disposition_id:Other`)
+
+data <- data %>%
+  select(-`admission_source_id:Emergency`, - `admission_source_id:Other`,
+         - `admission_source_id:Referral`, - `admission_source_id:Transfer`,)
+```
+
+### Especialidad Médica
+
+La variable "especialidad médica" describe las áreas de atención médica más frecuentes entre los pacientes, lo que ayuda a comprender la distribución de las consultas y tratamientos.
+
+
+```{r Unif-Especialidad, message=FALSE, warning=FALSE, echo=FALSE}
+
+Especialidad <- c("medical_specialty:Cardiology", "medical_specialty:Emergency/Trauma",
+                  "medical_specialty:Family/GeneralPractice", "medical_specialty:Gastroenterology",
+                  "medical_specialty:Hematology/Oncology", "medical_specialty:InternalMedicine",
+                  "medical_specialty:Nephrology", "medical_specialty:ObstetricsandGynecology",
+                  "medical_specialty:Orthopedics", 
+                  "medical_specialty:Other", "medical_specialty:Psychiatry", 
+                  "medical_specialty:Pulmonology", "medical_specialty:Radiology",
+                  "medical_specialty:Surgery-Cardiovascular/Thoracic", "medical_specialty:Surgery-General",
+                  "medical_specialty:Urology")
+
+Prop_Especialidad <- sapply(data[Especialidad], mean)
+
+T_Prop_Especialidad <- data.frame(
+  Variable = Especialidad,
+  Proporcion = as.vector(Prop_Especialidad)
+)
+
+T_Prop_Especialidad <- T_Prop_Especialidad[order(T_Prop_Especialidad$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_Especialidad, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Especialidad"
+)
+
+```
+
+
+La mayor proporción corresponde a Medicina Interna (14.38%), seguida por otras especialidades como Emergencias/Trauma (7.43%) y Medicina Familiar/General (7.31%). Especialidades como Cardiología (5.26%) y Cirugía General (3.09%) tienen una representación menor, mientras que un conjunto diverso de especialidades menores (Radiología, Psiquiatría, Obstetricia, entre otras) representan fracciones aún más pequeñas, lo que refleja una muestra con predominancia de algunas áreas médicas y una distribución más dispersa entre las demás.
+
+```{r plot-Especialidad, message=FALSE, warning=FALSE}
+
+T_Prop_Especialidad %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_hline(yintercept = 0.05, linetype = "dashed", color = "red", size = 0.7) + # Línea horizontal
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN ESPECIALIDAD",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+
+```
+
+```{r Especialidad-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Especialidad = case_when(
+    `medical_specialty:Cardiology` == 1 ~ "Cardiología",
+    `medical_specialty:Emergency/Trauma` == 1 ~ "Emergencia/Trauma",
+    `medical_specialty:Family/GeneralPractice` == 1 ~ "Familia/Medicina General",
+    `medical_specialty:Hematology/Oncology` == 1 ~ "Hematología/Oncología",
+    `medical_specialty:InternalMedicine` == 1 ~ "Medicina Interna",
+    TRUE ~ "Otro"
+  ))
+
+data <- data %>%
+  select(-`medical_specialty:Cardiology`, -`medical_specialty:Emergency/Trauma`, 
+         -`medical_specialty:Family/GeneralPractice`, -`medical_specialty:Hematology/Oncology`,
+         -`medical_specialty:InternalMedicine`, -`medical_specialty:Nephrology`, 
+         -`medical_specialty:ObstetricsandGynecology`, -`medical_specialty:Orthopedics`,
+         -`medical_specialty:Other`, -`medical_specialty:Psychiatry`, 
+         -`medical_specialty:Pulmonology`, -`medical_specialty:Radiology`,
+         -`medical_specialty:Surgery-Cardiovascular/Thoracic`, -`medical_specialty:Surgery-General`,
+         -`medical_specialty:Urology`, -`medical_specialty:Gastroenterology`)
+
+```
+
+### Diagnostico 1
+
+La variable "diag_1" representa los diagnósticos principales de los pacientes, lo cual es importante para entender la prevalencia de ciertas condiciones en la muestra. 
+
+
+```{r Unif-Diag1, message=FALSE, warning=FALSE, echo=FALSE}
+
+#Nombres en Diag_2
+diag1 <- c("diag_1:Circulatory", "diag_1:Diabetes", "diag_1:Digestive", "diag_1:Genitourinary",
+           "diag_1:Infectious", "diag_1:Injury", "diag_1:Mental", "diag_1:Musculoskeletal",
+           "diag_1:Neoplasms", "diag_1:Non-diabetes endocrine/metabolic", "diag_1:Other",
+           "diag_1:Respiratory", "diag_1:Skin")
+
+# Encontrar las proporciones para cada uno de las variables en la base data que hacen referencia 
+# a la variable diag_2
+
+# Calcular las proporciones para las variables en diag2
+Porp_diag1 <- sapply(data[diag1], mean)
+
+# Crear un data frame con los resultados
+T_Prop_diag1 <- data.frame(
+  Variable = diag1,        # Usar directamente los nombres en diag2
+  Proporcion = as.vector(Porp_diag1)  # Convertir a vector para asegurar el formato correcto
+)
+
+# Ordenar la tabla por proporción (opcional)
+T_Prop_diag1 <- T_Prop_diag1[order(T_Prop_diag1$Proporcion, decreasing = TRUE), ]
+
+# Generar la tabla con kable
+kable(
+  T_Prop_diag1, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Diag_1"
+)
+
+```
+
+
+La mayoría de los casos están relacionados con trastornos circulatorios (29.91%), seguidos de enfermedades respiratorias (14.17%) y digestivas (9.31%). Otras condiciones como diabetes (8.61%), lesiones (6.85%) y trastornos genitourinarios (5.03%) también tienen una representación significativa. Las condiciones más raras incluyen trastornos musculoesqueléticos, neoplasias, infecciones, y trastornos metabólicos, con proporciones menores, lo que sugiere una mayor prevalencia de enfermedades crónicas y comunes en la población.
+
+```{r plot-Diag1, message=FALSE, warning=FALSE}
+T_Prop_diag1 %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_hline(yintercept = 0.1, linetype = "dashed", color = "red", size = 0.7) + # Línea horizontal
+  coord_flip() +
+  ggtitle(label = "PROPORCION DELAS VARIABLES EN DIAG_1",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+```{r Diag1-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Diagnostico1 = case_when(
+    `diag_1:Circulatory` == 1 ~ "Circulatorio",
+    `diag_1:Respiratory` == 1 ~ "Respiratorio",
+    `diag_1:Diabetes` == 1 ~ "Diabetes",
+    `diag_1:Digestive` == 1 ~ "Digestive",
+    `diag_1:Other` == 1 ~ "Otro",
+    TRUE ~ "Otro"
+  ))
+
+data <- data %>%
+  select(-`diag_1:Circulatory`, -`diag_1:Diabetes`, -`diag_1:Digestive`, -`diag_1:Genitourinary`,
+         -`diag_1:Infectious`, -`diag_1:Injury`, -`diag_1:Mental`, -`diag_1:Musculoskeletal`,
+         -`diag_1:Neoplasms`, -`diag_1:Non-diabetes endocrine/metabolic`, -`diag_1:Other`,
+         -`diag_1:Respiratory`, -`diag_1:Skin`)
+
+
+```
+
+### Diagnostico 2
+
+La variable "diag_2" refleja el segundo diagnóstico más común entre los pacientes, lo cual proporciona una visión adicional sobre las comorbilidades.
+
+
+```{r Unif-Diag2, message=FALSE, warning=FALSE, echo=FALSE}
+
+#Nombres en Diag_2
+diag2 <- c("diag_2:Circulatory", "diag_2:Diabetes", "diag_2:Digestive", "diag_2:Genitourinary",
+           "diag_2:Infectious", "diag_2:Injury", "diag_2:Mental", "diag_2:Musculoskeletal",
+           "diag_2:Neoplasms", "diag_2:Non-diabetes endocrine/metabolic", "diag_2:Other",
+           "diag_2:Respiratory", "diag_2:Skin")
+
+# Encontrar las proporciones para cada uno de las variables en la base data que hacen referencia 
+# a la variable diag_2
+
+# Calcular las proporciones para las variables en diag2
+Porp_diag2 <- sapply(data[diag2], mean)
+
+# Crear un data frame con los resultados
+T_Prop_diag2 <- data.frame(
+  Variable = diag2,        # Usar directamente los nombres en diag2
+  Proporcion = as.vector(Porp_diag2)  # Convertir a vector para asegurar el formato correcto
+)
+
+# Ordenar la tabla por proporción (opcional)
+T_Prop_diag2 <- T_Prop_diag2[order(T_Prop_diag2$Proporcion, decreasing = TRUE), ]
+
+# Generar la tabla con kable
+kable(
+  T_Prop_diag2, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Diag_2"
+)
+
+```
+
+Al igual que en "diag_1", los trastornos circulatorios son predominantes (31.33%), seguidos por diabetes (12.57%) y problemas respiratorios (10.71%). Otras condiciones, como enfermedades genitourinarias (8.23%), endocrinas/metabólicas no relacionadas con la diabetes (8.07%), y trastornos digestivos (4.10%), también tienen representaciones importantes. Las condiciones como enfermedades de la piel, trastornos mentales y lesiones son menos comunes, pero siguen siendo relevantes dentro de la población estudiada.
+
+
+```{r plot-Diag2, message=FALSE, warning=FALSE}
+
+T_Prop_diag2 %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_hline(yintercept = 0.1, linetype = "dashed", color = "red", size = 0.7) + # Línea horizontal
+  coord_flip() +
+  ggtitle(label = "PROPORCION DELAS VARIABLES EN DIAG_2",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+
+```{r Diag2-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Diagnostico2 = case_when(
+    `diag_2:Circulatory` == 1 ~ "Circulatorio",
+    `diag_2:Diabetes` == 1 ~ "Diabetes",
+    `diag_2:Respiratory` == 1 ~ "Respiratorio",
+    `diag_2:Other` == 1 ~ "Otro",
+    TRUE ~ "Otro"
+  ))
+
+data <- data %>%
+  select(-`diag_2:Circulatory`, -`diag_2:Diabetes`, -`diag_2:Digestive`, -`diag_2:Genitourinary`,
+         -`diag_2:Infectious`, -`diag_2:Injury`, -`diag_2:Mental`, -`diag_2:Musculoskeletal`,
+         -`diag_2:Neoplasms`, -`diag_2:Non-diabetes endocrine/metabolic`, -`diag_2:Other`,
+         -`diag_2:Respiratory`, -`diag_2:Skin`)
+
+```
+
+### Diagnostico 3
+
+La variable "diag_3" representa el tercer diagnóstico más frecuente en los pacientes, brindando más contexto sobre las comorbilidades. 
+
+
+```{r Unif-Diag3, message=FALSE, warning=FALSE, echo=FALSE}
+
+diag3 <- c("diag_3:Circulatory", "diag_3:Diabetes", "diag_3:Digestive", "diag_3:Genitourinary",
+           "diag_3:Infectious", "diag_3:Injury", "diag_3:Mental", "diag_3:Musculoskeletal",
+           "diag_3:Neoplasms", "diag_3:Non-diabetes endocrine/metabolic", "diag_3:Other",
+           "diag_3:Respiratory", "diag_3:Skin")
+
+# Encontrar las proporciones para cada uno de las variables en la base data que hacen referencia
+
+# Calcular las proporciones para las variables en diag3
+
+Porp_diag3 <- sapply(data[diag3], mean)
+
+# Crear un data frame con los resultados
+
+T_Prop_diag3 <- data.frame(
+  Variable = diag3,        # Usar directamente los nombres en diag3
+  Proporcion = as.vector(Porp_diag3)  # Convertir a vector para asegurar el formato correcto
+)
+
+# Ordenar la tabla por proporción (opcional)
+
+T_Prop_diag3 <- T_Prop_diag3[order(T_Prop_diag3$Proporcion, decreasing = TRUE), ]
+
+# Generar la tabla con kable
+
+kable(
+  T_Prop_diag3, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Diag_3"
+)
+
+```
+
+Al igual que en los diagnósticos anteriores, los trastornos circulatorios son predominantes (29.78%), seguidos por diabetes (16.86%) y diagnósticos "otros" (13.63%). Condiciones como enfermedades endocrinas/metabólicas no relacionadas con la diabetes (8.99%) y respiratorias (7.23%) también son comunes. Otros diagnósticos incluyen problemas genitourinarios (6.56%), digestivos (3.86%), y mentales (3.08%), mientras que trastornos como enfermedades de la piel, lesiones y neoplasias tienen una menor representación.
+
+
+```{r plot-Diag3, message=FALSE, warning=FALSE}
+T_Prop_diag3 %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_hline(yintercept = 0.1, linetype = "dashed", color = "red", size = 0.7) + # Línea horizontal
+  coord_flip() +
+  ggtitle(label = "PROPORCION DELAS VARIABLES EN DIAG_3",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+```{r Diag3-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Diagnostico3 = case_when(
+    `diag_3:Circulatory` == 1 ~ "Circulatorio",
+    `diag_3:Diabetes` == 1 ~ "Diabetes",
+    `diag_3:Other` == 1 ~ "Otro",
+    TRUE ~ "Otro"
+  ))
+
+data <- data %>%
+  select(-`diag_3:Circulatory`, -`diag_3:Diabetes`, -`diag_3:Digestive`, -`diag_3:Genitourinary`,
+         -`diag_3:Infectious`, -`diag_3:Injury`, -`diag_3:Mental`, -`diag_3:Musculoskeletal`,
+         -`diag_3:Neoplasms`, -`diag_3:Non-diabetes endocrine/metabolic`, -`diag_3:Other`,
+         -`diag_3:Respiratory`, -`diag_3:Skin`)
+
+```
+
+### Medicamentos 
+
+La variable "metformin" indica el cambio en el tratamiento con metformina, un medicamento comúnmente usado para la diabetes. 
+
+
+```{r metformin, message=FALSE, warning=FALSE, echo=FALSE}
+
+metmorfin <- c("metformin:Down", "metformin:No", "metformin:Steady", "metformin:Up")
+
+Prop_metmorfin <- sapply(data[metmorfin], mean)
+
+T_Prop_metmorfin <- data.frame(
+  Variable = metmorfin,
+  Proporcion = as.vector(Prop_metmorfin)
+)
+
+T_Prop_metmorfin <- T_Prop_metmorfin[order(T_Prop_metmorfin$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_metmorfin, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Metformin"
+)
+
+
+```
+
+La mayoría de los pacientes no reciben metformina (80.36%), mientras que una proporción considerable tiene un tratamiento constante con metformina (18.03%). Solo un pequeño porcentaje de los pacientes están en un régimen de aumento (1.05%) o disminución (0.57%) de la dosis de metformina, lo que sugiere que la mayoría de los casos son controlados con una dosis estable o no requieren este tratamiento.
+
+
+```{r plot-metformin, message=FALSE, warning=FALSE}
+
+T_Prop_metmorfin %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN METFORMIN",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") + 
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+
+```
+
+
+```{r metformin-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Metformin = case_when(
+    `metformin:Down` == 1 ~ "Disminuido",
+    `metformin:No` == 1 ~ "No",
+    `metformin:Steady` == 1 ~ "Estable",
+    `metformin:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`metformin:Down`, -`metformin:No`, -`metformin:Steady`, -`metformin:Up`)
+```
+
+### Repaglinide
+
+La variable "repaglinide" indica el ajuste en el tratamiento con repaglinida, un medicamento utilizado para controlar la diabetes.
+
+```{r repaglinide, message=FALSE, warning=FALSE, echo=FALSE}
+
+repaglinide <- c("repaglinide:Down", "repaglinide:No", "repaglinide:Steady", "repaglinide:Up")
+
+Prop_repaglinide <- sapply(data[repaglinide], mean)
+
+T_Prop_repaglinide <- data.frame(
+  Variable = repaglinide,
+  Proporcion = as.vector(Prop_repaglinide)
+)
+
+T_Prop_repaglinide <- T_Prop_repaglinide[order(T_Prop_repaglinide$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_repaglinide, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Repaglinide"
+)
+
+```
+
+La gran mayoría de los pacientes no reciben repaglinida (98.49%), mientras que una pequeña proporción mantiene una dosis estable (1.36%). Los ajustes en el tratamiento, como el aumento (0.11%) o la disminución (0.04%) de la dosis, son mínimos, lo que sugiere que repaglinida es utilizado de manera muy limitada en la muestra, con la mayoría de los pacientes sin necesidad de este medicamento.
+
+
+```{r plot-repaglinide, message=FALSE, warning=FALSE}
+
+T_Prop_repaglinide %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN REPAGLINIDE",
+          subtitle= "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+
+```{r repaglinide-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Repaglinide = case_when(
+    `repaglinide:Down` == 1 ~ "Disminuido",
+    `repaglinide:No` == 1 ~ "No",
+    `repaglinide:Steady` == 1 ~ "Estable",
+    `repaglinide:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`repaglinide:Down`, -`repaglinide:No`, -`repaglinide:Steady`, -`repaglinide:Up`)
+
+```
+
+
+### Nateglinide
+
+La variable "nateglinide" refleja el uso y ajuste en el tratamiento con nateglinida, otro medicamento utilizado para la diabetes. 
+
+```{r nateglinide, message=FALSE, warning=FALSE, echo=FALSE}
+
+nateglinide <- c("nateglinide:Down", "nateglinide:No", "nateglinide:Steady", "nateglinide:Up")
+
+Prop_nateglinide <- sapply(data[nateglinide], mean)
+
+T_Prop_nateglinide <- data.frame(
+  Variable = nateglinide,
+  Proporcion = as.vector(Prop_nateglinide)
+)
+
+T_Prop_nateglinide <- T_Prop_nateglinide[order(T_Prop_nateglinide$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_nateglinide, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Nateglinide"
+)
+
+```
+
+La gran mayoría de los pacientes no reciben nateglinida (99.31%), con una pequeña proporción manteniendo una dosis estable (0.66%). Los ajustes en la dosis, como el aumento (0.02%) o la disminución (0.01%), son mínimos, lo que indica que este medicamento tiene una utilización muy baja en la muestra, con la mayoría de los pacientes sin necesidad de tratamiento con nateglinida.
+
+```{r plot-nateglinide, message=FALSE, warning=FALSE}
+T_Prop_nateglinide %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN NATEGLINIDE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+```{r nateglinide-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Nateglinide = case_when(
+    `nateglinide:Down` == 1 ~ "Disminuido",
+    `nateglinide:No` == 1 ~ "No",
+    `nateglinide:Steady` == 1 ~ "Estable",
+    `nateglinide:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`nateglinide:Down`, -`nateglinide:No`, -`nateglinide:Steady`, -`nateglinide:Up`)
+```
+
+### Clorpropamida
+
+La variable "chlorpropamide" muestra el uso y ajuste en el tratamiento con clorpropamida, un medicamento para la diabetes. 
+
+
+```{r chlorpropamide, message=FALSE, warning=FALSE, echo=FALSE}
+
+chlorpropamide <- c("chlorpropamide:Down", "chlorpropamide:No", "chlorpropamide:Steady", "chlorpropamide:Up")
+
+Prop_chlorpropamide <- sapply(data[chlorpropamide], mean)
+
+T_Prop_chlorpropamide <- data.frame(
+  Variable = chlorpropamide,
+  Proporcion = as.vector(Prop_chlorpropamide)
+)
+
+T_Prop_chlorpropamide <- T_Prop_chlorpropamide[order(T_Prop_chlorpropamide$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_chlorpropamide, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Chlorpropamide"
+)
+
+```
+
+La mayoría de los pacientes no reciben clorpropamida (99.92%), mientras que una pequeña fracción mantiene una dosis estable (0.08%). Los ajustes en la dosis, como el aumento (0.01%) o la disminución (menos del 0.01%), son prácticamente inexistentes, lo que indica que este medicamento es utilizado en una proporción extremadamente baja dentro de la muestra, con la mayoría de los pacientes no requiriendo tratamiento con clorpropamida.
+
+```{r plot-chlorpropamide, message=FALSE, warning=FALSE}
+T_Prop_chlorpropamide %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN CHLORPROPAMIDE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+
+```{r chlorpropamide-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Chlorpropamide = case_when(
+    `chlorpropamide:Down` == 1 ~ "Disminuido",
+    `chlorpropamide:No` == 1 ~ "No",
+    `chlorpropamide:Steady` == 1 ~ "Estable",
+    `chlorpropamide:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`chlorpropamide:Down`, -`chlorpropamide:No`, -`chlorpropamide:Steady`, -`chlorpropamide:Up`)
+
+```
+
+### Glimepiride
+
+La variable "glimepiride" refleja el uso y ajuste en el tratamiento con glimepirida, un medicamento utilizado para controlar la diabetes. 
+
+```{r glimepiride, message=FALSE, warning=FALSE, echo=FALSE}
+
+glipizide <- c("glipizide:Down", "glipizide:No", "glipizide:Steady", "glipizide:Up")
+
+Prop_glipizide <- sapply(data[glipizide], mean)
+
+T_Prop_glipizide <- data.frame(
+  Variable = glipizide,
+  Proporcion = as.vector(Prop_glipizide)
+)
+
+T_Prop_glipizide <- T_Prop_glipizide[order(T_Prop_glipizide$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_glipizide, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Glimepiride"
+)
+
+```
+
+La mayoría de los pacientes no reciben glimepirida (87.53%), mientras que una proporción significativa mantiene una dosis constante (11.16%). Solo una pequeña fracción de pacientes aumenta (0.76%) o disminuye (0.55%) la dosis de glimepirida, lo que sugiere que la mayoría de los casos son controlados con una dosis estable de este medicamento o no requieren su uso.
+
+
+```{r plot-glimepiride, message=FALSE, warning=FALSE}
+T_Prop_glipizide %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN GLIPIZIDE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+
+```
+
+
+```{r glimepiride-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Glipizide = case_when(
+    `glipizide:Down` == 1 ~ "Disminuido",
+    `glipizide:No` == 1 ~ "No",
+    `glipizide:Steady` == 1 ~ "Estable",
+    `glipizide:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`glipizide:Down`, -`glipizide:No`, -`glipizide:Steady`, -`glipizide:Up`)
+
+```
+
+### Glyburide
+
+La variable "glyburide" indica el uso y ajuste en el tratamiento con gliburida, un medicamento utilizado para la diabetes.
+
+
+```{r glyburide, message=FALSE, warning=FALSE, echo=FALSE}
+
+glyburide <- c("glyburide:Down", "glyburide:No", "glyburide:Steady", "glyburide:Up")
+
+Prop_glyburide <- sapply(data[glyburide], mean)
+
+T_Prop_glyburide <- data.frame(
+  Variable = glyburide,
+  Proporcion = as.vector(Prop_glyburide)
+)
+
+T_Prop_glyburide <- T_Prop_glyburide[order(T_Prop_glyburide$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_glyburide, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Gliplizide"
+)
+
+```
+
+La mayoría de los pacientes no reciben glyburide (89.53%), mientras que una proporción menor mantiene una dosis constante (9.11%). Los ajustes en la dosis, como el aumento (0.80%) o la disminución (0.55%), son mínimos, lo que sugiere que la mayoría de los pacientes no requieren este medicamento o lo mantienen a una dosis estable.
+
+```{r plot-glyburide, message=FALSE, warning=FALSE}
+T_Prop_glyburide %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN GLYBURIDE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+```{r glyburide-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Glyburide = case_when(
+    `glyburide:Down` == 1 ~ "Disminuido",
+    `glyburide:No` == 1 ~ "No",
+    `glyburide:Steady` == 1 ~ "Estable",
+    `glyburide:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`glyburide:Down`, -`glyburide:No`, -`glyburide:Steady`, -`glyburide:Up`)
+
+```
+
+### Glimepride
+
+La variable "glimepiride" refleja el uso y ajuste en el tratamiento con glimepirida, un medicamento para la diabetes.
+
+
+```{r Glimepride, message=FALSE, warning=FALSE, echo=FALSE}
+glimepiride <- c("glimepiride:Down", "glimepiride:No", "glimepiride:Steady", "glimepiride:Up")
+
+Prop_glimepiride <- sapply(data[glimepiride], mean)
+
+T_Prop_glimepiride <- data.frame(
+  Variable = glimepiride,
+  Proporcion = as.vector(Prop_glimepiride)
+)
+
+T_Prop_glimepiride <- T_Prop_glimepiride[order(T_Prop_glimepiride$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_glimepiride, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Glimepiride"
+)
+
+```
+
+
+La gran mayoría de los pacientes no reciben glimepirida (94.90%), mientras que una pequeña proporción mantiene una dosis estable (4.59%). Los ajustes en la dosis, como el aumento (0.32%) o la disminución (0.19%), son mínimos, lo que sugiere que este medicamento se utiliza en una proporción reducida de pacientes y, en su mayoría, con una dosis constante.
+
+```{r plot-Glimepride, message=FALSE, warning=FALSE}
+T_Prop_glimepiride %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN GLIMEPIRIDE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+```{r Glimepride-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Glimepiride = case_when(
+    `glimepiride:Down` == 1 ~ "Disminuido",
+    `glimepiride:No` == 1 ~ "No",
+    `glimepiride:Steady` == 1 ~ "Estable",
+    `glimepiride:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`glimepiride:Down`, -`glimepiride:No`, -`glimepiride:Steady`, -`glimepiride:Up`)
+
+```
+
+### Pioglitazone
+
+La variable "pioglitazone" muestra el uso y ajuste en el tratamiento con pioglitazona, un medicamento utilizado para la diabetes.
+
+
+```{r pioglitazone, message=FALSE, warning=FALSE, echo=FALSE}
+pioglitazone <- c("pioglitazone:Down", "pioglitazone:No", "pioglitazone:Steady", "pioglitazone:Up")
+
+Prop_pioglitazone <- sapply(data[pioglitazone], mean)
+
+T_Prop_pioglitazone <- data.frame(
+  Variable = pioglitazone,
+  Proporcion = as.vector(Prop_pioglitazone)
+)
+
+T_Prop_pioglitazone <- T_Prop_pioglitazone[order(T_Prop_pioglitazone$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_pioglitazone, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Pioglitazone"
+)
+
+```
+
+La mayoría de los pacientes no reciben pioglitazona (92.80%), mientras que una pequeña proporción mantiene una dosis constante (6.85%). Los ajustes en la dosis, como el aumento (0.23%) o la disminución (0.12%), son mínimos, lo que indica que este medicamento es utilizado por una minoría de pacientes y principalmente a dosis estables.
+
+```{r plot-pioglitazone, message=FALSE, warning=FALSE}
+T_Prop_pioglitazone %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN PIOGLITAZONE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+```{r pioglitazone-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Pioglitazone = case_when(
+    `pioglitazone:Down` == 1 ~ "Disminuido",
+    `pioglitazone:No` == 1 ~ "No",
+    `pioglitazone:Steady` == 1 ~ "Estable",
+    `pioglitazone:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`pioglitazone:Down`, -`pioglitazone:No`, -`pioglitazone:Steady`, -`pioglitazone:Up`)
+```
+
+### Rosiglitazone
+
+La variable "rosiglitazone" refleja el uso y ajuste en el tratamiento con rosiglitazona, un medicamento utilizado para tratar la diabetes. 
+
+```{r rosiglitazone, message=FALSE, warning=FALSE, echo=FALSE}
+rosiglitazone <- c("rosiglitazone:Down", "rosiglitazone:No", "rosiglitazone:Steady", "rosiglitazone:Up")
+
+Prop_rosiglitazone <- sapply(data[rosiglitazone], mean)
+
+T_Prop_rosiglitazone <- data.frame(
+  Variable = rosiglitazone,
+  Proporcion = as.vector(Prop_rosiglitazone)
+)
+
+T_Prop_rosiglitazone <- T_Prop_rosiglitazone[order(T_Prop_rosiglitazone$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_rosiglitazone, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Rosiglitazone"
+)
+
+```
+
+La mayoría de los pacientes no reciben rosiglitazona (93.75%), mientras que una pequeña fracción mantiene una dosis constante (5.99%). Los ajustes en la dosis, como el aumento (0.17%) o la disminución (0.09%), son mínimos, lo que sugiere que rosiglitazona es utilizado en una pequeña proporción de pacientes, y en su mayoría, el tratamiento se mantiene estable.
+
+```{r plot-rosiglitazone, message=FALSE, warning=FALSE}
+T_Prop_rosiglitazone %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN ROSIGLITAZONE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+```{r rosiglitazone-Unif, message=FALSE, warning=FALSE, include=FALSE}
+
+data <- data %>%
+  mutate(Rosiglitazone = case_when(
+    `rosiglitazone:Down` == 1 ~ "Disminuido",
+    `rosiglitazone:No` == 1 ~ "No",
+    `rosiglitazone:Steady` == 1 ~ "Estable",
+    `rosiglitazone:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>% 
+  select(-`rosiglitazone:Down`, -`rosiglitazone:No`, -`rosiglitazone:Steady`, -`rosiglitazone:Up`)
+
+```
+
+### Acarbose
+
+La variable "acarbose" refleja el uso y ajuste en el tratamiento con acarbosa, un medicamento utilizado para controlar la diabetes.
+
+```{r acarbose, message=FALSE, warning=FALSE, echo=FALSE}
+acarbose <- c("acarbose:Down", "acarbose:No", "acarbose:Steady", "acarbose:Up")
+
+Prop_acarbose <- sapply(data[acarbose], mean)
+
+T_Prop_acarbose <- data.frame(
+  Variable = acarbose,
+  Proporcion = as.vector(Prop_acarbose)
+)
+
+T_Prop_acarbose <- T_Prop_acarbose[order(T_Prop_acarbose$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_acarbose, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Acarbose"
+)
+
+```
+
+La gran mayoría de los pacientes no reciben acarbosa (99.70%), mientras que una pequeña fracción mantiene una dosis constante (0.29%). Los ajustes en la dosis, como el aumento (0.01%) o la disminución (menos del 0.01%), son prácticamente inexistentes, lo que indica que acarbosa es utilizado en una proporción extremadamente baja de pacientes y, cuando se usa, generalmente a dosis estables.
+
+```{r plot-acarbose, message=FALSE, warning=FALSE}
+
+T_Prop_acarbose %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN ACARBOSE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+
+```
+
+
+```{r acarbose-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Acarbose = case_when(
+    `acarbose:Down` == 1 ~ "Disminuido",
+    `acarbose:No` == 1 ~ "No",
+    `acarbose:Steady` == 1 ~ "Estable",
+    `acarbose:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`acarbose:Down`, -`acarbose:No`, -`acarbose:Steady`, -`acarbose:Up`)
+```
+
+### Miglitol
+
+La variable "miglitol" refleja el uso y ajuste en el tratamiento con miglitol, un medicamento utilizado para controlar la diabetes.
+
+
+```{r migilitol, message=FALSE, warning=FALSE, echo=FALSE}
+miglitol <- c("miglitol:Down", "miglitol:No", "miglitol:Steady", "miglitol:Up")
+
+Prop_miglitol <- sapply(data[miglitol], mean)
+
+T_Prop_miglitol <- data.frame(
+  Variable = miglitol,
+  Proporcion = as.vector(Prop_miglitol)
+)
+
+T_Prop_miglitol <- T_Prop_miglitol[order(T_Prop_miglitol$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_miglitol, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Miglitol"
+)
+
+```
+
+La gran mayoría de los pacientes no reciben miglitol (99.96%), con una pequeña proporción manteniendo una dosis constante (0.03%). Los ajustes en la dosis, como el aumento (0.002%) o la disminución (menos del 0.01%), son prácticamente inexistentes, lo que indica que miglitol es utilizado en una proporción extremadamente baja de pacientes y, cuando se utiliza, generalmente a dosis estables.
+
+```{r plot-miglitol, message=FALSE, warning=FALSE}
+T_Prop_miglitol %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN MIGLITOL",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+
+```{r miglitol-Unif, echo=TRUE, message=FALSE, warning=FALSE}
+data <- data %>%
+  mutate(Miglitol = case_when(
+    `miglitol:Down` == 1 ~ "Disminuido",
+    `miglitol:No` == 1 ~ "No",
+    `miglitol:Steady` == 1 ~ "Estable",
+    `miglitol:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`miglitol:Down`, -`miglitol:No`, -`miglitol:Steady`, -`miglitol:Up`)
+
+```
+
+### Tolazamide
+
+La variable "tolazamide" muestra el uso y ajuste en el tratamiento con tolazamida, un medicamento utilizado para tratar la diabetes. 
+
+```{r tolazamide, message=FALSE, warning=FALSE, echo=FALSE}
+tolazamide <- c("tolazamide:No", "tolazamide:Steady", "tolazamide:Up")
+
+Prop_tolazamide <- sapply(data[tolazamide], mean)
+
+T_Prop_tolazamide <- data.frame(
+  Variable = tolazamide,
+  Proporcion = as.vector(Prop_tolazamide)
+)
+
+T_Prop_tolazamide <- T_Prop_tolazamide[order(T_Prop_tolazamide$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_tolazamide, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Tolazamide"
+)
+
+```
+
+La gran mayoría de los pacientes no reciben tolazamida (99.96%), mientras que una pequeña fracción mantiene una dosis constante (0.04%). No se observan aumentos en la dosis, lo que sugiere que este medicamento se utiliza en una proporción mínima de pacientes y generalmente a dosis estables.
+
+
+```{r plot-tolazamide, message=FALSE, warning=FALSE}
+T_Prop_tolazamide %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN TOLAZAMIDE",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+```{r tolazamide-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Tolazamide = case_when(
+    `tolazamide:No` == 1 ~ "No",
+    `tolazamide:Steady` == 1 ~ "Estable",
+    `tolazamide:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select( -`tolazamide:No`, -`tolazamide:Steady`, -`tolazamide:Up`)
+
+```
+
+### Insulina
+
+La variable "insulin" indica el uso y ajuste en el tratamiento con insulina.
+
+
+```{r insuline, message=FALSE, warning=FALSE, echo=FALSE}
+insulin <- c("insulin:Down", "insulin:No", "insulin:Steady", "insulin:Up")
+
+Prop_insulin <- sapply(data[insulin], mean)
+
+T_Prop_insulin <- data.frame(
+  Variable = insulin,
+  Proporcion = as.vector(Prop_insulin)
+)
+
+T_Prop_insulin <- T_Prop_insulin[order(T_Prop_insulin$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_insulin, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Insulin"
+)
+
+```
+
+La distribución muestra que una proporción considerable de pacientes no recibe insulina (46.56%), mientras que una parte significativa tiene una dosis estable (30.31%). Además, un 12.01% de los pacientes experimenta una disminución en la dosis, y un 11.12% tiene un aumento en la dosis de insulina. Esto sugiere que, aunque una proporción significativa no utiliza insulina, aquellos que la usan tienen ajustes en sus dosis, lo que refleja variabilidad en el tratamiento.
+
+```{r plot-insulin, message=FALSE, warning=FALSE}
+T_Prop_insulin %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN INSULIN",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+```{r insuline-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Insulin = case_when(
+    `insulin:Down` == 1 ~ "Disminuido",
+    `insulin:No` == 1 ~ "No",
+    `insulin:Steady` == 1 ~ "Estable",
+    `insulin:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`insulin:Down`, -`insulin:No`, -`insulin:Steady`, -`insulin:Up`)
+```
+
+### Metformina
+
+La variable "glyburide-metformin" refleja el uso y ajuste en el tratamiento con una combinación de glyburide y metformina, medicamentos utilizados para controlar la diabetes. 
+
+```{r glyburide-metformin, message=FALSE, warning=FALSE, echo=FALSE}
+
+glyburide_metformin <- c("glyburide-metformin:Down", "glyburide-metformin:No", "glyburide-metformin:Steady", "glyburide-metformin:Up")
+
+Prop_glyburide_metformin <- sapply(data[glyburide_metformin], mean)
+
+T_Prop_glyburide_metformin <- data.frame(
+  Variable = glyburide_metformin,
+  Proporcion = as.vector(Prop_glyburide_metformin)
+)
+
+T_Prop_glyburide_metformin <- T_Prop_glyburide_metformin[order(T_Prop_glyburide_metformin$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_glyburide_metformin, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Glyburide-Metformin"
+)
+
+```
+
+La gran mayoría de los pacientes no reciben este tratamiento combinado (99.31%), mientras que una pequeña fracción mantiene una dosis constante (0.68%). Los ajustes en la dosis, como el aumento (0.01%) o la disminución (menos del 0.01%), son prácticamente inexistentes, lo que indica que este tratamiento combinado es utilizado en una proporción mínima de pacientes y generalmente a dosis estables.
+
+```{r plot-glyburide-metformin, message=FALSE, warning=FALSE}
+T_Prop_glyburide_metformin %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN GLYBURIDE-METFORMIN",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+```
+
+
+```{r glyburide-metformin-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Glyburide_Metformin = case_when(
+    `glyburide-metformin:Down` == 1 ~ "Disminuido",
+    `glyburide-metformin:No` == 1 ~ "No",
+    `glyburide-metformin:Steady` == 1 ~ "Estable",
+    `glyburide-metformin:Up` == 1 ~ "Aumentado",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`glyburide-metformin:Down`, -`glyburide-metformin:No`, -`glyburide-metformin:Steady`, -`glyburide-metformin:Up`)
+
+```
+
+### A1Cresult
+
+La variable "A1Cresult" refleja los resultados de las pruebas de hemoglobina A1c, que indican el control a largo plazo de la glucosa en sangre en pacientes con diabetes. 
+
+```{r A1Cresult, message=FALSE, warning=FALSE, echo=FALSE}
+A1Cresult <- c("A1Cresult:Norm", "A1Cresult:None", "A1Cresult:>7", "A1Cresult:>8")
+
+Prop_A1Cresult <- sapply(data[A1Cresult], mean)
+
+T_Prop_A1Cresult <- data.frame(
+  Variable = A1Cresult,
+  Proporcion = as.vector(Prop_A1Cresult)
+)
+
+T_Prop_A1Cresult <- T_Prop_A1Cresult[order(T_Prop_A1Cresult$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_A1Cresult, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en A1Cresult"
+)
+
+```
+
+La mayoría de los pacientes no tienen un resultado A1c registrado (83.28%), lo que podría indicar que los datos no fueron obtenidos o no se realizaron pruebas. De los pacientes con resultados, una proporción significativa tiene un A1c mayor a 8 (>8) (8.07%), lo que indica un mal control de la glucosa. Un porcentaje menor muestra un resultado dentro del rango normal (4.90%) o con A1c entre 7 y 8 (>7) (3.75%). Esto sugiere que una proporción significativa de pacientes no tiene resultados de A1c registrados, y aquellos que lo tienen, en su mayoría, presentan un mal control de la glucosa.
+
+```{r plot-A1Cresult, message=FALSE, warning=FALSE}
+T_Prop_A1Cresult %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN A1CRESULT",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+```{r A1Cresult-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(A1Cresult = case_when(
+    `A1Cresult:Norm` == 1 ~ "Normal",
+    `A1Cresult:None` == 1 ~ "No",
+    `A1Cresult:>7` == 1 ~ "Mayor a 7",
+    `A1Cresult:>8` == 1 ~ "Mayor a 8",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`A1Cresult:Norm`, -`A1Cresult:None`, -`A1Cresult:>7`, -`A1Cresult:>8`)
+
+```
+
+### Max Glu Serum
+
+La variable "max_glu_serum" refleja los resultados del nivel máximo de glucosa en suero de los pacientes. 
+
+```{r max_glu_serum, message=FALSE, warning=FALSE, echo=FALSE}
+max_glu_serum <- c("max_glu_serum:Norm", "max_glu_serum:None", "max_glu_serum:>200", "max_glu_serum:>300")
+
+Prop_max_glu_serum <- sapply(data[max_glu_serum], mean)
+
+T_Prop_max_glu_serum <- data.frame(
+  Variable = max_glu_serum,
+  Proporcion = as.vector(Prop_max_glu_serum)
+)
+
+T_Prop_max_glu_serum <- T_Prop_max_glu_serum[order(T_Prop_max_glu_serum$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_max_glu_serum, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Max Glu Serum"
+)
+```
+
+La mayoría de los pacientes no tienen un resultado registrado para este análisis (94.75%), lo que podría indicar que no se realizaron pruebas o no se disponen de los datos. De los pacientes con resultados, una pequeña proporción tiene niveles normales de glucosa en suero (2.55%), mientras que un porcentaje menor presenta niveles superiores a 200 mg/dL (>200) (1.46%) o superiores a 300 mg/dL (>300) (1.24%), lo que sugiere un control insuficiente de la glucosa en sangre en estos casos.
+
+
+```{r plot-max_glu_serum, message=FALSE, warning=FALSE}
+T_Prop_max_glu_serum %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN MAX GLU SERUM",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+
+```{r max_glu_serum-Unif, message=FALSE, warning=FALSE, include=FALSE}
+data <- data %>%
+  mutate(Max_Glu_Serum = case_when(
+    `max_glu_serum:Norm` == 1 ~ "Normal",
+    `max_glu_serum:None` == 1 ~ "No",
+    `max_glu_serum:>200` == 1 ~ "Mayor a 200",
+    `max_glu_serum:>300` == 1 ~ "Mayor a 300",
+    TRUE ~ "Desconocido"
+  ))
+
+data <- data %>%
+  select(-`max_glu_serum:Norm`, -`max_glu_serum:None`, -`max_glu_serum:>200`, -`max_glu_serum:>300`)
+```
+
+### Readmision
+
+La variable "readmitted" indica si los pacientes fueron readmitidos tras su alta. 
+
+```{r Readmision, message=FALSE, warning=FALSE, echo=FALSE}
+
+Prop_readmitted <- sapply(data["readmitted"], mean)
+
+T_Prop_readmitted <- data.frame(
+  Variable = "readmitted",
+  Proporcion = as.vector(Prop_readmitted)
+)
+
+T_Prop_readmitted <- T_Prop_readmitted[order(T_Prop_readmitted$Proporcion, decreasing = TRUE), ]
+
+kable(
+  T_Prop_readmitted, 
+  format = "markdown", 
+  col.names = c("Variable", "Proporción"),
+  caption = "Proporciones de las variables en Readmitted"
+)
+
+```
+
+Una proporción del 46.09% de los pacientes regresó al hospital, lo que sugiere que casi la mitad de los casos podrían necesitar una evaluación adicional para identificar factores que influyen en las readmisiones, como la efectividad del tratamiento o el manejo post-alta.
+
+```{r plot-Readmision, message=FALSE, warning=FALSE}
+T_Prop_readmitted %>%
+  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  ggtitle(label = "PROPORCION DE LAS VARIABLES EN READMITTED",
+          subtitle = "PERFILES DE PACIENTES CON DIABETES") +
+  labs(x = "Variable", y = "Proporción") +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        legend.position = "none", text = element_text(size = 10),
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+```
+
+En general, las variables analizadas revelan un panorama de tratamiento y control de la diabetes en una población de pacientes. La mayoría de los tratamientos y medicaciones (como metformina, repaglinida, acarbosa, entre otros) no son utilizados por la mayoría de los pacientes, con una proporción significativa recibiendo tratamientos estables o constantes. Los ajustes en las dosis de estos medicamentos son mínimos, lo que sugiere que muchos pacientes tienen un tratamiento controlado y sin cambios frecuentes en su dosificación.
+
+Sin embargo, en lo que respecta a los resultados de los análisis relacionados con el control de la glucosa, como los niveles de A1c y la glucosa en suero, se observa que una proporción importante de pacientes tiene niveles fuera del rango ideal, con un porcentaje notablemente bajo con A1c superior a 8, lo que indica un mal control de la glucosa. De manera similar, aunque pocos pacientes presentan niveles de glucosa en suero superiores a 200 mg/dL o 300 mg/dL, esto señala que existen casos de control deficiente de la diabetes.
+
+En resumen, aunque muchos pacientes tienen un tratamiento estable y bien administrado, el control de la glucosa en sangre en algunos casos no es óptimo, lo que podría implicar la necesidad de intervenciones adicionales para mejorar el manejo de la diabetes y sus complicaciones asociadas.
+
+## Variables Numericas
+
+### Tiempo en el Hospital
+
+La variable "Time in Hospital" representa la duración de las estancias hospitalarias en días. Los valores van desde un mínimo de 1 día hasta un máximo de 14 días. 
+
+```{r Time_in_Hospital, message=FALSE, warning=FALSE, echo=FALSE}
+
+# Crear el resumen como un vector nombrado
+summary_time_in_hospital <- summary(data$time_in_hospital)
+
+# Convertir el vector a un data.frame
+summary_time_in_hospital_df <- data.frame(
+  Variable = names(summary_time_in_hospital),
+  Valor = as.numeric(summary_time_in_hospital)
+)
+
+# Mostrar con kable
+kable(
+  summary_time_in_hospital_df, 
+  format = "markdown", 
+  caption = "Resumen de la variable Time in Hospital"
+)
+
+```
+
+La mediana es de 4 días, lo que indica que la mitad de las estancias son de 4 días o menos. El promedio es ligeramente mayor (4.40 días), lo que sugiere la presencia de algunas estancias más largas que elevan este valor. La mayoría de las estancias se concentran entre 2 días (primer cuartil) y 6 días (tercer cuartil).
+
+```{r Plot-Time-in-Hospital, message=FALSE, warning=FALSE}
+
+data %>%
+  ggplot(aes(x = time_in_hospital)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  ggtitle(label = "DISTRIBUCIÓN DEL TIEMPO EN EL HOSPITAL",
+          subtitle = "PACIENTES CON DIABETES") +
+  labs(x = "Días en el hospital", y = "Frecuencia") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"),
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10))
+
+
+```
+
+### Numero de Procedimientos de Laboratorio
+
+La variable "Num Lab Procedures" representa el número de procedimientos de laboratorio realizados durante la estancia hospitalaria. 
+
+```{r Num_Procedures_Lab, message=FALSE, warning=FALSE, echo=FALSE}
+
+# Crear el resumen como un vector nombrado
+
+summary_num_lab_procedures <- summary(data$num_lab_procedures)
+
+# Convertir el vector a un data.frame
+
+summary_num_lab_procedures_df <- data.frame(
+  Variable = names(summary_num_lab_procedures),
+  Valor = as.numeric(summary_num_lab_procedures)
+)
+
+# Mostrar con kable
+
+kable(
+  summary_num_lab_procedures_df, 
+  format = "markdown", 
+  caption = "Resumen de la variable Num Lab Procedures"
+)
+
+```
+
+Los valores oscilan entre un mínimo de 1 y un máximo de 132 procedimientos. La mediana es de 44, lo que indica que la mitad de los pacientes tiene 44 o menos procedimientos. El promedio es de 43.10, cercano a la mediana, lo que sugiere una distribución relativamente equilibrada. La mayoría de los valores se encuentran entre 31 (primer cuartil) y 57 (tercer cuartil), reflejando que estos son los rangos típicos de procedimientos realizados.
+
+```{r Plot-Num-Procedures_Lab, message=FALSE, warning=FALSE}
+
+# Grafica
+
+data %>%
+  ggplot(aes(x = num_lab_procedures)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
+  ggtitle(label = "DISTRIBUCIÓN DE PROCEDIMIENTOS DE LABORATORIO",
+          subtitle = "PACIENTES CON DIABETES") +
+  labs(x = "Número de procedimientos", y = "Frecuencia") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"),
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10))
+```
+
+### Numero de Procedimientos
+
+La variable "Num Procedures" representa el número de procedimientos realizados durante la estancia hospitalaria. 
+
+```{r Num_Procedures, message=FALSE, warning=FALSE, echo=FALSE}
+
+# Crear el resumen como un vector nombrado
+
+summary_num_procedures <- summary(data$num_procedures)
+
+# Convertir el vector a un data.frame
+
+summary_num_procedures_df <- data.frame(
+  Variable = names(summary_num_procedures),
+  Valor = as.numeric(summary_num_procedures)
+)
+
+# Mostrar con kable
+
+kable(
+  summary_num_procedures_df, 
+  format = "markdown", 
+  caption = "Resumen de la variable Num Procedures"
+)
+
+```
+
+El valor mínimo es 0, lo que indica que algunos pacientes no recibieron procedimientos. La mediana es 1, lo que significa que la mitad de los pacientes tuvieron 1 o menos procedimientos. El promedio es de 1.34, lo que sugiere que, en general, los pacientes se someten a pocos procedimientos. La mayoría de los pacientes tuvieron entre 0 y 2 procedimientos, con un valor máximo de 6 procedimientos. Esto refleja que la mayoría de los casos fueron relativamente simples en términos de intervenciones.
+
+```{r Plot-Num-Procedures, message=FALSE, warning=FALSE}
+
+data %>%
+  ggplot(aes(x = num_procedures)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  ggtitle(label = "DISTRIBUCIÓN DE PROCEDIMIENTOS",
+          subtitle = "PACIENTES CON DIABETES") +
+  labs(x = "Número de procedimientos", y = "Frecuencia") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"),
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10))
+
+```
+
+
+### Numero de Medicamentos
+
+La variable "Num Medications" refleja el número de medicamentos administrados durante la estancia hospitalaria. 
+
+```{r Num_Medications, message=FALSE, warning=FALSE, echo=FALSE}
+
+# Crear el resumen como un vector nombrado
+
+summary_num_medications <- summary(data$num_medications)
+
+# Convertir el vector a un data.frame
+
+summary_num_medications_df <- data.frame(
+  Variable = names(summary_num_medications),
+  Valor = as.numeric(summary_num_medications)
+)
+
+# Mostrar con kable
+
+kable(
+  summary_num_medications_df, 
+  format = "markdown", 
+  caption = "Resumen de la variable Num Medications"
+)
+
+```
+
+Los valores varían entre un mínimo de 1 medicamento y un máximo de 81. La mediana es 15, lo que indica que la mitad de los pacientes recibió 15 o menos medicamentos. El promedio es de 16.02, lo que sugiere que, en general, los pacientes reciben un número relativamente alto de medicamentos durante su atención. La mayoría de los pacientes se encuentra entre 10 y 20 medicamentos (primer y tercer cuartil), lo que refleja un rango común de tratamiento en la muestra.
+
+```{r Plot-Num-Medications, message=FALSE, warning=FALSE}
+data %>%
+  ggplot(aes(x = num_medications)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
+  ggtitle(label = "DISTRIBUCIÓN DE MEDICAMENTOS",
+          subtitle = "PACIENTES CON DIABETES") +
+  labs(x = "Número de medicamentos", y = "Frecuencia") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"),
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10))
+```
+
+
+### Numero de Outpatient
+
+La variable "Number Outpatient" refleja el número de visitas ambulatorias previas al ingreso hospitalario. 
+
+```{r Num_Outpatient, message=FALSE, warning=FALSE, echo=FALSE}
+
+# Crear el resumen como un vector nombrado
+
+summary_number_outpatient <- summary(data$number_outpatient)
+
+# Convertir el vector a un data.frame
+
+summary_number_outpatient_df <- data.frame(
+  Variable = names(summary_number_outpatient),
+  Valor = as.numeric(summary_number_outpatient)
+)
+
+# Mostrar con kable
+
+kable(
+  summary_number_outpatient_df, 
+  format = "markdown", 
+  caption = "Resumen de la variable Number Outpatient"
+)
+
+```
+
+La mayoría de los pacientes no tiene visitas ambulatorias registradas (mínimo, primer cuartil y mediana son 0). Sin embargo, el valor promedio es de 0.37 visitas, lo que indica que, en promedio, algunos pacientes tienen una o más visitas ambulatorias antes de su hospitalización, aunque la mayoría no tiene ninguna. El valor máximo es 42 visitas, lo que sugiere que existen algunos pacientes con un historial ambulatorio más extenso antes de ser ingresados.
+
+```{r Plot-Num-Outpatient, message=FALSE, warning=FALSE}
+
+# Grafica
+
+data %>%
+  ggplot(aes(x = number_outpatient)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  ggtitle(label = "DISTRIBUCIÓN DE VISITAS AMBULATORIAS",
+          subtitle = "PACIENTES CON DIABETES") +
+  labs(x = "Número de visitas", y = "Frecuencia") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"),
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10))
+
+```
+
+
+### Numero de Emergency
+
+La variable "Number Emergency" refleja el número de visitas de emergencia previas al ingreso hospitalario. 
+
+```{r Num_Emergency, message=FALSE, warning=FALSE, echo=FALSE}
+# Crear el resumen como un vector nombrado
+
+summary_number_emergency <- summary(data$number_emergency)
+
+# Convertir el vector a un data.frame
+
+summary_number_emergency_df <- data.frame(
+  Variable = names(summary_number_emergency),
+  Valor = as.numeric(summary_number_emergency)
+)
+
+# Mostrar con kable
+
+kable(
+  summary_number_emergency_df, 
+  format = "markdown", 
+  caption = "Resumen de la variable Number Emergency"
+)
+```
+
+La mayoría de los pacientes no tiene visitas de emergencia registradas (mínimo, primer cuartil y mediana son 0). El promedio es de 0.20 visitas, lo que indica que, en general, los pacientes tienen pocas visitas a emergencias antes de su hospitalización. Sin embargo, el valor máximo es 76, lo que sugiere que algunos pacientes pueden haber tenido un número considerable de visitas a emergencias antes de ser admitidos en el hospital.
+
+```{r Plot-Num-Emergency, message=FALSE, warning=FALSE}
+# Grafica
+
+data %>%
+  ggplot(aes(x = number_emergency)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  ggtitle(label = "DISTRIBUCIÓN DE VISITAS DE EMERGENCIA",
+          subtitle = "PACIENTES CON DIABETES") +
+  labs(x = "Número de visitas", y = "Frecuencia") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"),
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10))
+
+```
+
+### Numero de Inpatient
+
+La variable "Number Inpatient" refleja el número de ingresos hospitalarios previos al ingreso actual. 
+
+```{r Num_Inpatient, message=FALSE, warning=FALSE, echo=FALSE}
+# Crear el resumen como un vector nombrado
+
+summary_number_inpatient <- summary(data$number_inpatient)
+
+# Convertir el vector a un data.frame
+
+summary_number_inpatient_df <- data.frame(
+  Variable = names(summary_number_inpatient),
+  Valor = as.numeric(summary_number_inpatient)
+)
+
+# Mostrar con kable
+
+kable(
+  summary_number_inpatient_df, 
+  format = "markdown", 
+  caption = "Resumen de la variable Number Inpatient"
+)
+```
+
+La mayoría de los pacientes no tiene ingresos previos registrados (mínimo, primer cuartil y mediana son 0). El promedio es de 0.64 ingresos, lo que indica que, en general, los pacientes tienen pocos ingresos previos. El tercer cuartil es 1, lo que significa que la mayoría de los pacientes ha tenido 0 o 1 ingreso anterior. El valor máximo es 21, lo que sugiere que algunos pacientes tienen un historial significativo de hospitalizaciones previas.
+
+```{r Plot-Num-Inpatient, message=FALSE, warning=FALSE}
+# Grafica
+
+data %>%
+  ggplot(aes(x = number_inpatient)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  ggtitle(label = "DISTRIBUCIÓN DE VISITAS HOSPITALARIAS",
+          subtitle = "PACIENTES CON DIABETES") +
+  labs(x = "Número de visitas", y = "Frecuencia") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"),
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10))
+```
+
+
+### Numero de Diagnosticos
+
+La variable "Number Diagnoses" representa el número de diagnósticos registrados durante la estancia hospitalaria. 
+
+
+```{r Num_Diagnoses, message=FALSE, warning=FALSE, echo=FALSE}
+
+# Crear el resumen como un vector nombrado
+
+summary_number_diagnoses <- summary(data$number_diagnoses)
+
+# Convertir el vector a un data.frame
+
+summary_number_diagnoses_df <- data.frame(
+  Variable = names(summary_number_diagnoses),
+  Valor = as.numeric(summary_number_diagnoses)
+)
+
+# Mostrar con kable
+
+kable(
+  summary_number_diagnoses_df, 
+  format = "markdown", 
+  caption = "Resumen de la variable Number Diagnoses"
+)
+
+```
+
+El valor mínimo es 1, lo que indica que todos los pacientes tienen al menos un diagnóstico. La mediana es 8, lo que sugiere que la mitad de los pacientes tiene 8 o menos diagnósticos. El promedio es de 7.42, lo que refleja que en general los pacientes tienen múltiples diagnósticos, pero no de manera excesiva. La mayoría de los pacientes tiene entre 6 y 9 diagnósticos (primer y tercer cuartil), y el valor máximo es 16, lo que indica que algunos pacientes pueden ser diagnosticados con múltiples condiciones complejas.
+
+```{r Plot-Num-Diagnoses, message=FALSE, warning=FALSE}
+
+# Grafica
+
+data %>%
+  ggplot(aes(x = number_diagnoses)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  ggtitle(label = "DISTRIBUCIÓN DE DIAGNÓSTICOS",
+          subtitle = "PACIENTES CON DIABETES") +
+  labs(x = "Número de diagnósticos", y = "Frecuencia") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"),
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10))
+
+```
+
+### Matriz de Correlación
+
+A continuacion se presenta la matriz de correlación de las variables numéricas.
+
+```{r Correlacion, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Seleccionar solo las columnas numéricas
+numerical_vars <- data[, c("time_in_hospital", "num_lab_procedures", "num_procedures", 
+                         "num_medications", "number_outpatient", "number_emergency", 
+                         "number_inpatient", "number_diagnoses")]
+
+# Calcular la matriz de correlación
+correlation_matrix <- cor(numerical_vars)
+
+# Mostrar la matriz de correlación usando kable
+kable(correlation_matrix, format = "markdown", caption = "Matriz de Correlación de Variables Numéricas")
+
+```
+
+```{r Heatmap, message=FALSE, warning=FALSE}
+# Crear el mapa de calor con la función corrplot
+corrplot(correlation_matrix, 
+         tl.pos = "n",  # No mostrar etiquetas de texto
+         tl.col = "black",  # Color de las etiquetas
+         cl.cex = 0.8,  # Ajustar el tamaño de la leyenda
+         order = "hclust",  # Ordenar las variables según un dendrograma jerárquico
+         method = "color",  # Usar colores en el mapa de calor
+         col = colorRampPalette(c("blue", "white", "red"))(200),  # Definir la paleta de colores
+         title = "Matriz de Correlación de Variables Numéricas",  # Título
+         mar = c(0,0,1,0)  # Ajustar márgenes
+)
+
+```
+
+
+Las variables numéricas muestran que la mayoría de los pacientes tienen estancias hospitalarias cortas, con una duración promedio de alrededor de 4 días. También se observa que los pacientes son sometidos a una cantidad considerable de procedimientos de laboratorio, con una media de 43, lo que indica una atención diagnóstica frecuente. Sin embargo, los procedimientos médicos invasivos son menos comunes, ya que la mayoría de los pacientes solo recibe uno o dos.
+
+En cuanto a la medicación, los pacientes reciben en promedio 16 medicamentos, lo que refleja tratamientos médicos complejos. La mayoría de los pacientes no tiene visitas ambulatorias ni de emergencia previas al ingreso, aunque algunos sí tienen antecedentes de múltiples visitas a emergencias. Además, aunque la mayoría de los pacientes no tiene hospitalizaciones previas, algunos tienen un historial de múltiples ingresos, lo que puede sugerir condiciones más crónicas. Finalmente, los pacientes tienen entre 6 y 9 diagnósticos, lo que muestra que su atención médica generalmente abarca varias condiciones diferentes.
+
+## Base Final
+
+Luego de las transformaciones y análisis realizados, la base de datos final se presenta a continuación.
+
+```{r srt_data_after, message=FALSE, warning=FALSE, echo=FALSE}
+str(data)
+```
+
+Podemos ver como pasamos de tener 151 variables a tener solo 36, al unificar las categoricas en una sola, con esto tambien podemos observar, que tenos un total de 8 variables de tipo numerico y 28 de tipo categorico, a continuacion se presenta un summary de la base de datos.
+
+```{r summary_data, message=FALSE, warning=FALSE}
+summary(data)
+```
+
+
+
+
+
+
+
