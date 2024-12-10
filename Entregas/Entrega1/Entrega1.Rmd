@@ -28,6 +28,7 @@ knitr::opts_chunk$set(
 )
 ```
 
+
 ```{r setwd, message=FALSE, warning=FALSE, include=FALSE}
 setwd("~/REPOS GIT/Ciencia_de_Datos/Entregas/Entrega1")
 ```
@@ -2288,9 +2289,17 @@ numerical_vars <- data[, c("time_in_hospital", "num_lab_procedures", "num_proced
 correlation_matrix <- cor(numerical_vars)
 
 # Mostrar la matriz de correlación usando kable
-kable(correlation_matrix, format = "markdown", caption = "Matriz de Correlación de Variables Numéricas")
+kable(correlation_matrix, format = "html", caption = "Matriz de Correlación de Variables Numéricas") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  scroll_box(width = "100%", height = "400px")
 
 ```
+
+Las variables numéricas muestran que la mayoría de los pacientes tienen estancias hospitalarias cortas, con una duración promedio de alrededor de 4 días. También se observa que los pacientes son sometidos a una cantidad considerable de procedimientos de laboratorio, con una media de 43, lo que indica una atención diagnóstica frecuente. Sin embargo, los procedimientos médicos invasivos son menos comunes, ya que la mayoría de los pacientes solo recibe uno o dos.
+
+En cuanto a la medicación, los pacientes reciben en promedio 16 medicamentos, lo que refleja tratamientos médicos complejos. La mayoría de los pacientes no tiene visitas ambulatorias ni de emergencia previas al ingreso, aunque algunos sí tienen antecedentes de múltiples visitas a emergencias. Además, aunque la mayoría de los pacientes no tiene hospitalizaciones previas, algunos tienen un historial de múltiples ingresos, lo que puede sugerir condiciones más crónicas. Finalmente, los pacientes tienen entre 6 y 9 diagnósticos, lo que muestra que su atención médica generalmente abarca varias condiciones diferentes.
+
+Por ultimo, la siguiente figura, corresponde al mapa de calor de las variables numéricas, donde se puede observar la relación entre las variables de una forma más clara y dinamica.
 
 ```{r Heatmap, message=FALSE, warning=FALSE}
 # Crear el mapa de calor con la función corrplot
@@ -2300,16 +2309,14 @@ corrplot(correlation_matrix,
          cl.cex = 0.8,  # Ajustar el tamaño de la leyenda
          order = "original",  # Ordenar las variables según un dendrograma jerárquico
          method = "color",  # Usar colores en el mapa de calor
-         col = colorRampPalette(c('#F5A831', '#D14B3D', '#1D2F57'))(200),  # Definir la paleta de colores
+         col = colorRampPalette(c('#D14B3D','#F5A831','#1D2F57'))(200),  # Definir la paleta de colores
          title = "Matriz de Correlación de Variables Numéricas",  # Título
          mar = c(0,0,1,0)  # Ajustar márgenes
 )
 
 ```
 
-Las variables numéricas muestran que la mayoría de los pacientes tienen estancias hospitalarias cortas, con una duración promedio de alrededor de 4 días. También se observa que los pacientes son sometidos a una cantidad considerable de procedimientos de laboratorio, con una media de 43, lo que indica una atención diagnóstica frecuente. Sin embargo, los procedimientos médicos invasivos son menos comunes, ya que la mayoría de los pacientes solo recibe uno o dos.
-
-En cuanto a la medicación, los pacientes reciben en promedio 16 medicamentos, lo que refleja tratamientos médicos complejos. La mayoría de los pacientes no tiene visitas ambulatorias ni de emergencia previas al ingreso, aunque algunos sí tienen antecedentes de múltiples visitas a emergencias. Además, aunque la mayoría de los pacientes no tiene hospitalizaciones previas, algunos tienen un historial de múltiples ingresos, lo que puede sugerir condiciones más crónicas. Finalmente, los pacientes tienen entre 6 y 9 diagnósticos, lo que muestra que su atención médica generalmente abarca varias condiciones diferentes.
+Aquí se puede observar que no hay correlaciones fuertes entre las variables numéricas, lo que sugiere que no hay una relación lineal clara entre ellas. Esto indica que las variables numéricas representan aspectos diferentes de la atención médica y el tratamiento de los pacientes, lo que refleja la complejidad y diversidad de las condiciones de salud y los tratamientos asociados.
 
 ## **BASE FINAL**
 
@@ -2319,8 +2326,4 @@ Luego de las transformaciones y análisis realizados, la base de datos final se 
 glimpse(data)
 ```
 
-Podemos ver como pasamos de tener 151 variables a tener solo 36, al unificar las categoricas en una sola, con esto tambien podemos observar, que tenos un total de 8 variables de tipo numerico y 28 de tipo categorico, a continuacion se presenta un summary de la base de datos.
-
-```{r summary_data, message=FALSE, warning=FALSE}
-summary(data)
-```
+Podemos ver como pasamos de tener 151 variables a tener solo 36, al unificar las categoricas en una sola, con esto tambien podemos observar, que tenos un total de 8 variables de tipo numerico y 28 de tipo categorico.
