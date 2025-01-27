@@ -5,10 +5,6 @@
 
 Este espacio esta dedicado al desarrollo de la tematica de la asignatura de Topicos Avanzados de Estadística I para el Semestre 2024-2 En el Departamento de Estadística dela Universidad Nacional, el cual tiene como tematica principal este semestre el Aprendizaje Automatico y Ciencia de Datos, donde se plantea explorar todo lo relacionado con esta area de las cuales se pueda hacer un modelado, clasificación, ajuste, agrupamiento etc. 
 
-## ¿Qué encontrará aquí?
-
-La idea de este repo es ir desarrollando la tematica de la asignatura y que este sirva de guia o inspiracion para otros, por lo tanto lo que se plantea que se encuentre aquí alojado serían Talleres, Proyectos, Entregas, Clases y cualquier otro tipo de material que sea util para el desarrollo.
-
 ## DEFINICIÓN DEL PROYECTO
 
 <h3 align="center">ANÁLISIS Y MODELADO PARA OPTIMIZAR LA GESTIÓN DE PACIENTES CON DIABETES Y REDUCIR LAS READMINISIONES HOSPITALARIAS</h3>
