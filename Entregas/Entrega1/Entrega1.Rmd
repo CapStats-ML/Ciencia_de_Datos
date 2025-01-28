@@ -22,8 +22,8 @@ knitr::opts_chunk$set(
   echo = TRUE,         # Mostrar el código en el documento
   warning = FALSE,     # Ocultar warnings
   message = FALSE,     # Ocultar mensajes
-  fig.width = 10,       # Ancho de las figuras
-  fig.height = 7,      # Alto de las figuras
+  fig.width = 8,       # Ancho de las figuras
+  fig.height = 5.5,      # Alto de las figuras
   fig.align = 'center' # Alinear las figuras en el centro
 )
 ```
@@ -146,18 +146,22 @@ Una proporción significativa (77.00%) de los pacientes está bajo tratamiento, 
 
 ```{r plot-DiabetesMed, message=FALSE, warning=FALSE}
 T_Proportion_diabetesMed %>%
-  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
+  mutate(Sobrante = 1 - Proporcion) %>%
+  ggplot(aes(x = reorder(Variable, Proporcion))) +
+  geom_bar(aes(y = 1), stat = "identity", fill = "grey90") +  # Barra gris del 100%
+  geom_bar(aes(y = Proporcion), stat = "identity", fill = "steelblue") +  # Barra azul de la proporción
   coord_flip() +
-  ggtitle(label = "PROPORCION DE PACIENTES QUE RECIBEN MEDICAMENTOS PARA LA DIABETES", 
+  ggtitle(label = "PROPORCIÓN DE PACIENTES QUE RECIBEN MEDICAMENTOS PARA LA DIABETES", 
           subtitle = "PERFILES DE PACIENTES CON DIABETES") +
   labs(x = "Variable", y = "Proporción") +
-  coord_flip() +
   theme_minimal() +
   theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
         legend.position = "none", text = element_text(size = 10),
         plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
+
 ```
+
 
 ### CHANGE
 
@@ -186,17 +190,19 @@ Una proporción considerable (46.19%) de los pacientes experimentó cambios en s
 
 ```{r plot-Change, message=FALSE, warning=FALSE}
 T_Prop_change %>%
-  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
+  mutate(Sobrante = 1 - Proporcion) %>%
+  ggplot(aes(x = reorder(Variable, Proporcion))) +
+  geom_bar(aes(y = 1), stat = "identity", fill = "grey90") +  # Barra gris del 100%
+  geom_bar(aes(y = Proporcion), stat = "identity", fill = "steelblue") +  # Barra azul de la proporción
   coord_flip() +
-  ggtitle(label = "PROPORCION DE LAS VARIABLES EN CHANGE", 
+  ggtitle(label = "PROPORCIÓN DE LAS VARIABLES EN CHANGE", 
           subtitle = "PERFILES DE PACIENTES CON DIABETES") +
   labs(x = "Variable", y = "Proporción") +
-  coord_flip() +
   theme_minimal() +
   theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
         legend.position = "none", text = element_text(size = 10),
         plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
 ```
 
 ### RAZA
@@ -1889,17 +1895,19 @@ Una proporción del 46.09% de los pacientes regresó al hospital, lo que sugiere
 
 ```{r plot-Readmision, message=FALSE, warning=FALSE}
 T_Prop_readmitted %>%
-  ggplot(aes(x = reorder(Variable, Proporcion), y = Proporcion)) +
-  geom_bar(stat = "identity", fill = "steelblue") +
+  mutate(Sobrante = 1 - Proporcion) %>%
+  ggplot(aes(x = reorder(Variable, Proporcion))) +
+  geom_bar(aes(y = 1), stat = "identity", fill = "grey90") +  # Barra gris del 100%
+  geom_bar(aes(y = Proporcion), stat = "identity", fill = "steelblue") +  # Barra azul de la proporción
   coord_flip() +
-  ggtitle(label = "PROPORCION DE LAS VARIABLES EN READMITTED",
+  ggtitle(label = "PROPORCIÓN DE LAS VARIABLES EN READMITTED",
           subtitle = "PERFILES DE PACIENTES CON DIABETES") +
   labs(x = "Variable", y = "Proporción") +
-  coord_flip() +
   theme_minimal() +
   theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5), 
         legend.position = "none", text = element_text(size = 10),
         plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5, color = "grey50"))
+
 ```
 
 ------------------------------------------------------------------------
@@ -2310,7 +2318,7 @@ corrplot(correlation_matrix,
          order = "original",  # Ordenar las variables según un dendrograma jerárquico
          method = "color",  # Usar colores en el mapa de calor
          col = colorRampPalette(c('#D14B3D','#F5A831','#1D2F57'))(200),  # Definir la paleta de colores
-         title = "Matriz de Correlación de Variables Numéricas",  # Título
+         title = "MATRIZ DE CORRELACIÓN DE VARIABLES NUMÉRICAS",  # Título
          mar = c(0,0,1,0)  # Ajustar márgenes
 )
 
@@ -2327,3 +2335,10 @@ glimpse(data)
 ```
 
 Podemos ver como pasamos de tener 151 variables a tener solo 36, al unificar las categoricas en una sola, con esto tambien podemos observar, que tenos un total de 8 variables de tipo numerico y 28 de tipo categorico.
+
+```{r include=FALSE}
+# Guardar la base de datos final
+
+write.csv(data, "data2.csv", row.names = FALSE)
+```
+

@@ -1,0 +1,582 @@
+---
+title: "APRENDIZAJE AUTOMATICO Y CIENCIA DE DATOS"
+subtitle: "ENTREGA 2: ESTADÍSTICA DESCRIPTIVA MULTIVARIADA"
+author:
+  - name: "Cesar Augusto Prieto Sarmiento"
+    affiliation: |
+      Universidad Nacional de Colombia  
+      Departamento de Estadística
+    email: "ceprieto@unal.edu.co"
+website: "https://github.com/CapStats-ML"
+output:
+  html_document:
+    toc: false
+    fig_caption: true
+    template: template.html
+    smooth-scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,         # Mostrar el código en el documento
+  warning = FALSE,     # Ocultar warnings
+  message = FALSE,     # Ocultar mensajes
+  fig.width = 8,       # Ancho de las figuras
+  fig.height = 5.5,      # Alto de las figuras
+  fig.align = 'center' # Alinear las figuras en el centro
+)
+```
+
+```{r setwd, message=FALSE, warning=FALSE, include=FALSE}
+setwd("~/REPOS GIT/Ciencia_de_Datos/Entregas/Entrega2")
+```
+
+```{r libraries, message=FALSE, warning=FALSE, include=FALSE}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(RColorBrewer)
+library(kableExtra)
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+library(FactoClass)
+library(ade4)
+library(factoextra)
+```
+
+```{r load_data, message=FALSE, warning=FALSE, include=FALSE}
+setwd("~/REPOS GIT/Ciencia_de_Datos/Datos")
+data <- read_csv("data2.csv")
+```
+
+# **ANÁLISIS EXPLORATORIO DE DATOS MULTIVARIADO**
+
+En el análisis de datos provenientes de pacientes hospitalizados por diabetes, es fundamental entender los factores asociados con las readmisiones hospitalarias y cómo estos influyen en los perfiles de los pacientes. La alta tasa de readmisiones representa un desafío significativo para los sistemas de salud, ya que está relacionada con costos elevados y posibles deficiencias en la atención médica o la gestión del tratamiento.
+
+Este proyecto busca aplicar técnicas multivariadas para explorar y analizar la información de manera integral. Las herramientas seleccionadas permiten identificar patrones ocultos en los datos y agrupar a los pacientes en segmentos homogéneos basados en características compartidas. Los objetivos específicos incluyen:
+
+-   **Reducir la dimensionalidad** de los datos y sintetizar la información clave mediante el Análisis de Componentes Principales (ACP).
+-   **Explorar las relaciones entre variables categóricas** utilizando el Análisis de Correspondencias Múltiples (ACM).
+-   **Segmentar los pacientes** en grupos homogéneos mediante métodos de agrupamiento, como K-means y Agrupamiento Jerárquico.
+-   **Generar insights** prácticos que puedan ser utilizados para mejorar la atención médica y reducir las tasas de readmisión hospitalaria.
+
+La combinación de estas técnicas proporciona una perspectiva robusta para analizar los datos tanto desde un enfoque exploratorio como aplicado, permitiendo así responder preguntas clave sobre los perfiles de los pacientes y su relación con las variables relevantes.
+
+Este análisis tiene un enfoque centrado en los datos y está diseñado para proporcionar bases sólidas para investigaciones futuras, tales como la implementación de modelos predictivos o la toma de decisiones clínicas basadas en datos.
+
+# **ANÁLISIS DE COMPONENTES PRINCIPALES (ACP)**
+
+## **ACP GENERAL PARA VARIABLES NUMERICAS**
+
+El Análisis de Componentes Principales (ACP) es una técnica de reducción de dimensionalidad que permite sintetizar la información contenida en un conjunto de variables en un número menor de componentes no correlacionados. En este caso, se aplicará el ACP a las variables numéricas del conjunto de datos para identificar patrones y estructuras subyacentes.
+
+```{r ACP1, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Seleccionar solo las columnas numéricas
+dat1 <- data[, c("time_in_hospital", "num_lab_procedures", "num_procedures", 
+                 "num_medications", "number_outpatient", "number_emergency", 
+                 "number_inpatient", "number_diagnoses")]
+glimpse(dat1)
+
+```
+
+Primero se propone un ACP para todas las variables numéricas del conjunto de datos. Con el Objetivo de observar el comportamiento y la importacia de cada una de ellas en el análisis.
+
+```{r ACP2, echo=FALSE, message=FALSE, warning=FALSE}
+
+acp <- dudi.pca(dat1, scannf = FALSE)
+summary(acp)
+```
+
+El Análisis de Componentes Principales revela que los dos primeros componentes explican el 42.52% de la variabilidad total de los datos (25.39% y 17.13% respectivamente). Para capturar más del 75% de la información, se requieren cinco componentes, lo que indica una estructura compleja en los datos que no puede ser reducida a pocas dimensiones sin una pérdida significativa de información. Esto sugiere que las variables originales presentan relaciones complejas entre sí que requieren múltiples dimensiones para ser representadas adecuadamente, esto se puede apreciar más directamente con el histograma de valores propios a con.
+
+```{r}
+inertia(acp)      # valores propios y porcentajes
+
+barplot(acp$eig, horiz = TRUE) # histograma de valores propios
+abline(v = 1, lty = 3, col = "red")
+```
+
+### **CIRCULO DE CORRELACION**
+
+El circulo de corrrelación es una herramienta que permite visualizar la relación entre las variables originales y los componentes principales. Las variables que están más cerca de los ejes del ACP tienen una mayor correlación con ellos, lo que indica su contribución a la varianza explicada por los componentes.
+
+```{r}
+fviz_pca_var(acp, col.var = "contrib", axes = c(1, 2),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE, geom = c("arrow", "text")) +
+  labs(title = "PROYECCIÓN DE LAS VARIABLES RELACIONADAS\nCON LA DURACION DE LA HOSPITALIZACIÓN",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+El círculo de correlación muestra cómo las variables originales están proyectadas en los dos primeros ejes del ACP. Las flechas representan las variables, y su dirección indica su contribución a los componentes principales. Se identificaron dos grupos principales:
+
+1.  Primer Grupo (Hacia el cuadrante Negativo del Eje X)
+    - **Variables principales:** time_in_hospital, num_medications, num_lab_procedures y num_diagnoses.
+    - **Interpretación:** Este grupo de variables está relacionado con la duración de la hospitalización y la intensidad del tratamiento médico. Estas variables contribuyen negativamente al eje CP1, sugiriendo que los pacientes con valores altos en estas métricas tienden a agruparse en esta dirección.
+    
+2.  Segundo Grupo (Hacia el cuadrante Positivo del Eje X y negativo del Eje Y)
+    - **Variables principales:** number_outpatient, number_emergency, number_inpatient y num_procedures.
+    - **Interpretación:** Este grupo de variables está relacionado con las visitas ambulatorias, las emergencias hospitalarias y los procedimientos médicos. Estas variables contribuyen negativamente al eje CP2, sugiriendo que los pacientes con valores altos en estas métricas tienden a agruparse en esta dirección.
+
+### **PROYECCIÓN DE LOS PACIENTES EN EL PLANO**
+
+En nuestro caso la proyección en el plano de los dos primeros componentes principales nos permitirá visualizar la distribución de los pacientes en función de las variables originales. Esta representación gráfica nos ayudará a identificar patrones y posibles agrupamientos en los datos.
+
+```{r}
+# Proyeccion de los primero 10mil datos en el plano de los dos primeros componentes principales con % de inercia en los ejes 
+
+fviz_pca_ind(acp, col.ind = "cos2", axes = c(1, 2),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE,geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+Como podemos obsevar en la representacion del plano, los pacientes se encuentran distribuidos de manera homogenea en el plano, lo que indica que no se pueden identificar grupos claros de pacientes basados en estas variables.
+
+Dado estos resultados, se propone realizar un ACP por grupos de variables, utilizando los grupos anteriormente identificados utilizando el circulo de correlación, con el objetivo de identificar patrones más claros y simplificar la interpretación de los resultados.
+
+## **ACP PARA GRUPO 1 DE VARIABLES**
+
+Este primer grupo de varibales se relacionan directamente a la duración de la hospitalización y el tratamiento médico, por lo que se espera que las variables estén altamente correlacionadas y se puedan identificar patrones claros en los datos. Por otro lado, tambien se espera que la proyección de los pacientes en el plano de los dos primeros componentes principales muestre una mejor distribucion de los pacientes en el plano con el fin de poder identificar grupos.
+
+```{r}
+# Grupo 1: Variables relacionadas con la duración de la hospitalización y el tratamiento médico
+
+dat2 <- data[, c("time_in_hospital", "num_lab_procedures", "num_medications", "number_diagnoses", "Edad", "Genero", "readmitted", "A1Cresult")]
+
+acp1 <- dudi.pca(dat2[,1:4], scannf = FALSE, nf = 3)
+summary(acp1)
+```
+El análisis de componentes principales para el grupo 1 de variables muestra que los dos primeros componentes explican el 68.22% de la variabilidad total de los datos (46.70% y 21.52% respectivamente). Para capturar más del 75% de la información, se requieren al menos 3 componentes, con lo cual se completaría un 86.82% al estar aplicando la tecnica con 4 variables y tener que tomar las primeras 3, nos indica que, aunque la estructura de los datos es más simple y se puede reducir a una menor dimension sin una pérdida significativa de información aun no es posible reducirlo a dos dimensiones.
+
+
+```{r}
+inertia(acp1)      # valores propios y porcentajes
+
+barplot(acp1$eig, horiz = TRUE) # histograma de valores propios
+abline(v = 0.6, lwd = 1, lty = 3, col = "red")
+```
+
+Viendo el histograma de valores propios,que aunque el primer eje es el más importante y el segundo eje es significativo, el tercer eje también tiene un valor propio importante, por lo que se propone tomar los tres ejes.
+
+### **CIRCULO DE CORRELACION** {.tabset}
+
+En este caso el circulo de correlaciones sera mostrado en las combinaciones posibles de los ejes para poder observar la relación de las variables con los componentes principales.
+
+#### **EJES (1, 2)**
+
+```{r}
+
+fviz_pca_var(acp1, col.var = "contrib", axes = c(1, 2),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE, geom = c("arrow", "text")) +
+  labs(title = "PROYECCIÓN DE LAS VARIABLES RELACIONADAS\nCON LA DURACION DE LA HOSPITALIZACIÓN",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+Este primer grafico muesta la relación tal cual como la habiamos observado en el circulo de correlación anterior, las variables time_in_hospital, num_medications, num_lab_procedures y num_diagnoses están altamente correlacionadas con el primer componente principal, lo que indica que estas variables son las que más influyen en la duración de la hospitalización.
+
+#### **EJES (1, 3)**
+
+```{r}
+fviz_pca_var(acp1, col.var = "contrib", axes = c(1, 3),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE, geom = c("arrow", "text")) +
+  labs(title = "PROYECCIÓN DE LAS VARIABLES RELACIONADAS\nCON LA DURACION DE LA HOSPITALIZACIÓN",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+En este caso, el segundo eje principal muestra una relación con las variables num_lab_procedures y num_diagnoses, lo que indica que estas variables están relacionadas con la duración de la hospitalización, pero en menor medida que las variables del primer eje.
+
+
+#### **EJES (2, 3)**
+
+```{r}
+fviz_pca_var(acp1, col.var = "contrib", axes = c(2, 3),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE, geom = c("arrow", "text")) +
+  labs(title = "PROYECCIÓN DE LAS VARIABLES RELACIONADAS\nCON LA DURACION DE LA HOSPITALIZACIÓN",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+Este tercer grafico muestra la relación de las variables num_lab_procedures y num_diagnoses con el segundo eje principal, lo que indica que estas variables están relacionadas entre sí, pero en menor medida que las variables del primer eje.
+
+
+### **PROYECCIÓN DE LOS PACIENTES EN EL PLANO** {.tabset}
+
+Para el caso de la proyeccion en el plano tambien lo haremos considerando los 3 ejes principales, con el objetivo de poder observar la distribución de los pacientes en el plano y poder identificar grupos de pacientes.
+
+#### EJE (1, 2)
+
+```{r}
+fviz_pca_ind(acp1, col.ind = "cos2", axes = c(1, 2),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE,geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+#### EJE (1, 3)
+
+```{r}
+fviz_pca_ind(acp1, col.ind = "cos2", axes = c(1, 3),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE,geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+#### EJE (2, 3)
+
+```{r}
+fviz_pca_ind(acp1, col.ind = "cos2", axes = c(2, 3),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE,geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+### PROYECCIÓN CON AGRUPAMIENTO {.tabset}
+
+Esta siguiente proyecion en el plano sera conrepecto a los 2 ejes principales y se hara con agrupamiento por las variables categoricas, con el objetivo de poder identificar grupos de pacientes basados en estas variables.
+
+#### EDAD
+
+```{r}
+
+fviz_pca_ind(acp1, 
+             axes = c(1, 2),
+             habillage = dat2[[5]],  # Esto creará grupos por 0 y 1
+             addEllipses = TRUE,
+             repel = TRUE,
+             geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "AGRUPAMIENTO POR RANGO DE EDAD") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+#### SEXO
+
+```{r}
+
+fviz_pca_ind(acp1, 
+             axes = c(1, 2),
+             habillage = dat2[[6]],  # Esto creará grupos por 0 y 1
+             addEllipses = TRUE,
+             repel = TRUE,
+             geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "AGRUPAMIENTO POR SEXO BIOLOGICO") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+#### REINGRESO
+
+```{r}
+fviz_pca_ind(acp1, 
+             axes = c(1, 2),
+             habillage = dat2[[7]],  # Esto creará grupos por 0 y 1
+             addEllipses = TRUE,
+             repel = TRUE,
+             geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "AGRUPAMIENTO POR REINGRESO AL HOSPITAL") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+#### PRUEBA A1
+
+```{r}
+fviz_pca_ind(acp1, 
+             axes = c(1, 2),
+             habillage = dat2[[8]],  # Esto creará grupos por 0 y 1
+             addEllipses = TRUE,
+             repel = TRUE,
+             geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "AGRUPAMIENTO POR RESULTADOS EN LA PRUEBA A1") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+
+## **ACP PARA GRUPO 2 DE VARIABLES**
+
+Este grupo de variables se relaciona con las visitas ambulatorias, las emergencias hospitalarias y los procedimientos médicos, por lo que se espera que las variables estén altamente correlacionadas y se puedan identificar patrones claros en los datos. Por otro lado, tambien se espera que la proyección de los pacientes en el plano de los dos primeros componentes principales muestre una mejor distribucion de los pacientes en el plano con el fin de poder identificar grupos.
+
+```{r}
+# Grupo 2: Variables relacionadas con las visitas ambulatorias, las emergencias hospitalarias y los procedimientos médicos
+
+dat3 <- data[, c("number_outpatient", "number_emergency", "number_inpatient", "num_procedures", "number_diagnoses", "Edad", "Genero", "readmitted", "A1Cresult")]
+
+acp2 <- dudi.pca(dat3[,1:5], scannf = FALSE, nf = 3)
+summary(acp2)
+
+```
+
+El análisis de componentes principales para el grupo 2 de variables muestra que los dos primeros componentes explican el 49.26% de la variabilidad total de los datos (27.73% y 21.53% respectivamente). Para capturar más del 75% de la información, se requieren al menos 4 componentes, con lo cual se completaría un 85.52%. Este resultado al igual que el del grupo anterior no es tan bueno, pero, se decidio tomar los 3 ejes principales y continuar con el ejercicio de proyección en el plano. 
+
+
+```{r}
+inertia(acp2)      # valores propios y porcentajes
+
+barplot(acp2$eig, horiz = TRUE) # histograma de valores propios
+abline(v = 0.9, lwd = 1, lty = 3, col = "red")
+```
+
+Aquí, el histograma de valores propios muestra que el primer eje es el más importante, seguido por el segundo eje, lo que indica que estos dos componentes capturan la mayor parte de la variabilidad en los datos. El tercer eje también tiene un valor propio importante, lo que sugiere que podría ser relevante para capturar información adicional.
+
+
+### **CIRCULO DE CORRELACION** {.tabset}
+
+En este caso el circulo de correlaciones sera mostrado en las combinaciones posibles de los ejes para poder observar la relación de las variables con los componentes principales.
+
+#### **EJES (1, 2)**
+
+```{r}
+
+fviz_pca_var(acp2, col.var = "contrib", axes = c(1, 2),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE, geom = c("arrow", "text")) +
+  labs(title = "PROYECCIÓN DE LAS VARIABLES RELACIONADAS\nCON EMERGENCIAS HOSPITALARIAS",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+Para este primer grafico, se observa que las variables number_outpatient, number_emergency y number_inpatient están altamente correlacionadas con el primer componente principal, lo que indica que estas variables son las que más influyen en las emergencias hospitalarias.
+
+#### **EJES (1, 3)**
+
+```{r}
+fviz_pca_var(acp2, col.var = "contrib", axes = c(1, 3),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE, geom = c("arrow", "text")) +
+  labs(title = "PROYECCIÓN DE LAS VARIABLES RELACIONADAS\nCON EMERGENCIAS HOSPITALARIAS",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+Luego, el grafico en el plano de los ejes 1 y 3 muestra que las variables number_outpatient y number_emergency están altamente correlacionadas con el primer componente principal, lo que indica que estas variables son las que más influyen en las emergencias hospitalarias.
+
+#### **EJES (2, 3)**
+
+```{r}
+fviz_pca_var(acp2, col.var = "contrib", axes = c(2, 3),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE, geom = c("arrow", "text")) +
+  labs(title = "PROYECCIÓN DE LAS VARIABLES RELACIONADAS\nCON EMERGENCIAS HOSPITALARIAS",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+Ahora el grafico para los ejes 2 y 3 muestra que las variables number_inpatient y num_procedures están altamente correlacionadas con el segundo componente principal, lo que indica que estas variables son las que más influyen en las emergencias hospitalarias.
+
+
+### **PROYECCIÓN DE LOS PACIENTES EN EL PLANO** {.tabset}
+
+#### EJE (1, 2)
+
+```{r}
+fviz_pca_ind(acp2, col.ind = "cos2", axes = c(1, 2),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE,geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+#### EJE (1, 3)
+
+```{r}
+fviz_pca_ind(acp2, col.ind = "cos2", axes = c(1, 3),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE,geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+#### EJE (2, 3)
+
+```{r}
+fviz_pca_ind(acp2, col.ind = "cos2", axes = c(2, 3),
+             gradient.cols = c("#eeaf61", "#ee5d6c", "#6a0d83"),
+             repel = TRUE,geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "EXPLORACION MULTIVARIADA DE PACIENTES CON HbA1c") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+### PROYECCIÓN CON AGRUPAMIENTO {.tabset}
+
+Ahora probemos como se veria la proyección de los pacientes en el plano de los dos primeros componentes principales, pero esta vez con agrupamiento por las variables categoricas.
+
+#### EDAD
+
+```{r}
+
+fviz_pca_ind(acp2, 
+             axes = c(1, 3),
+             habillage = dat3[[6]],  # Esto creará grupos por 0 y 1
+             addEllipses = TRUE,
+             repel = TRUE,
+             geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "AGRUPAMIENTO POR RANGO DE EDAD") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+#### SEXO
+
+```{r}
+
+fviz_pca_ind(acp2, 
+             axes = c(1, 3),
+             habillage = dat3[[7]],  # Esto creará grupos por 0 y 1
+             addEllipses = TRUE,
+             repel = TRUE,
+             geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "AGRUPAMIENTO POR SEXO BIOLOGICO") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+#### REINGRESO
+
+```{r}
+fviz_pca_ind(acp2, 
+             axes = c(1, 3),
+             habillage = dat3[[8]],  # Esto creará grupos por 0 y 1
+             addEllipses = TRUE,
+             repel = TRUE,
+             geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "AGRUPAMIENTO POR REINGRESO AL HOSPITAL") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+#### PRUEBA A1
+
+```{r}
+fviz_pca_ind(acp2, 
+             axes = c(1, 3),
+             habillage = dat3[[9]],  # Esto creará grupos por 0 y 1
+             addEllipses = TRUE,
+             repel = TRUE,
+             geom = "point") + 
+  labs(title = "PROYECCIÓN DE LOS PACIENTES EN LOS DOS\nPRIMEROS COMPONENTES PRINCIPALES",
+       subtitle = "AGRUPAMIENTO POR RESULTADOS EN LA PRUEBA A1") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+
+# **ANÁLISIS DE CORRESPONDENCIAS MÚLTIPLES (ACM)**
+
+# **AGRUPAMIENTO DE PACIENTES**
