@@ -579,4 +579,219 @@ fviz_pca_ind(acp2,
 
 # **ANÁLISIS DE CORRESPONDENCIAS MÚLTIPLES (ACM)**
 
+Ahora, para el ACM se propone explorar las relaciones entre las variables categóricas del conjunto de datos. El ACM es una técnica de análisis multivariado que permite visualizar y analizar la asociación entre variables categóricas, lo que puede ayudar a identificar patrones y estructuras subyacentes en los datos.
+
+En este caso vamos a dividir el análisis en 2 grupos, el primero conformado por aquellas que son prubeas de laboratorio y el segundo por las variables relacionadas con la hospitalización del paciente, con el objetivo de poder identificar patrones y estructuras subyacentes en los datos, luego se evaluara la posibilidad de realizar el ejercicio combinando varias de estas varibles. 
+
+## **ACM PARA VARIABLES DE LABORATORIO**
+
+Las variables utilizadas aquí son aquellas relacionadas con las pruebas de laboratorio, como la medicación, los resultados de las pruebas de laboratorio y el nivel máximo de glucosa en suero. Estas variables son categóricas y se espera que estén relacionadas entre sí, lo que puede ayudar a identificar patrones en los datos.
+
+No todas las variables seran usadas en el ACM algunas seran usadas más adelante como ulistrativas para la proyección de los pacientes en el plano.
+
+```{r}
+# Grupo 1: Variables relacionadas con las pruebas de laboratorio
+
+dat4 <- data[, c("Metformin", "Repaglinide", "Nateglinide", "Chlorpropamide", "Glipizide", "Glyburide", "Glimepiride", "Pioglitazone", "Rosiglitazone", "Acarbose", "Miglitol", "Tolazamide", "Insulin", "Glyburide_Metformin", "A1Cresult", "Max_Glu_Serum")]
+
+
+
+# Convertir todas las columnas a factor
+dat4 <- data.frame(lapply(dat4, as.factor))
+
+# Ahora sí realizar el ACM
+acm1 <- dudi.acm(dat4[,1:5], scannf = FALSE)
+summary(acm1)
+```
+
+```{r}
+fviz_screeplot(acm1,
+               addlabels = TRUE,
+               ylim = c(0, 20))+ 
+  labs(title = "REPRESENTACIÓN DE LOS VALORES PROPIOS OBTENIDOS DEL ACM",
+       subtitle = "PORCENTAJE DE LA VARIANZA EXPLICADA") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+Aquí podemos observar que el resultado no es tan bueno como se esperaba, ya que los primeros ejes solo explican cada uno 7.2% de la varianza total de los datos, lo que indica que las variables no están altamente correlacionadas entre sí. Sin embargo, se propone continuar con la proyección de los pacientes en el plano de los dos primeros componentes principales para identificar patrones en los datos.
+
+
+Luego la contribucion es muy poca y esta se puede observar en el siguiente grafico. 
+
+```{r}
+fviz_contrib(acm1,
+             choice = "var",
+             axes = 1) + 
+  labs(title = "CONTRIBUCIÓN DE LAS VARIABLES EN EL PRIMER EJE",
+       subtitle = "GRUPO DE VARIABLES RELACIONADAS CON PRUEBAS") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+fviz_contrib(acm1,
+             choice = "var",
+             axes = 2) + 
+  labs(title = "CONTRIBUCIÓN DE LAS VARIABLES EN EL PRIMER EJE",
+       subtitle = "GRUPO DE VARIABLES RELACIONADAS CON PRUEBAS") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Estos dos graficos nos muestas las diferencuas en la contribución de las variables en los dos primeros ejes, lo que indica que las variables no están altamente correlacionadas entre sí.
+
+Ahora, la representación gráfica de los resultados obtenidos del ACM se muestra a continuación.
+
+```{r}
+fviz_mca_biplot(acm1, axes=c(1,2), 
+                repel = TRUE, label = "var",
+                ggtheme=theme_minimal())+ 
+  labs(title = "REPRESENTACIÓN DE LOS RESULTADOS OBTENIDOS DEL ACM",
+       subtitle = "GRUPO DE VARIABLES RELACIONADAS CON PRUEBAS") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+Del grafico podemos decir que las variables Metformin, Repaglinide, Nateglinide, Chlorpropamide y Glipizide son las que más influyen en el primer eje, mientras que las variables Glyburide, Glimepiride, Pioglitazone, Rosiglitazone y Acarbose son las que más influyen en el segundo eje.
+
+
+```{r}
+
+# Grupo 2: Variables relacionadas con la hospitalización
+
+dat5 <- data[,c("change", "diabetesMed", "readmitted", "Raza", "Genero", "Edad", "Admision", "Discharge", "Especialidad")]
+
+# Convertir todas las columnas a factor
+dat5 <- data.frame(lapply(dat5, as.factor))
+
+# Ahora sí realizar el ACM
+acm2 <- dudi.acm(dat5, scannf = FALSE)
+summary(acm2)
+```
+
+```{r}
+fviz_screeplot(acm2,
+               addlabels = TRUE,
+               ylim = c(0, 20))+ 
+  labs(title = "REPRESENTACIÓN DE LOS VALORES PROPIOS OBTENIDOS DEL ACM",
+       subtitle = "PORCENTAJE DE LA VARIANZA EXPLICADA") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+
+```
+
+Aquí podemos observar que el resultado no es tan bueno como se esperaba, ya que los primeros ejes solo explican cada uno 7.2% de la varianza total de los datos, lo que indica que las variables no están altamente correlacionadas entre sí. Sin embargo, se propone continuar con la proyección de los pacientes en el plano de los dos primeros componentes principales para identificar patrones en los datos.
+
+
+Luego la contribucion es muy poca y esta se puede observar en el siguiente grafico. 
+
+```{r}
+fviz_contrib(acm1,
+             choice = "var",
+             axes = 1) + 
+  labs(title = "CONTRIBUCIÓN DE LAS VARIABLES EN EL PRIMER EJE",
+       subtitle = "GRUPO DE VARIABLES RELACIONADAS CON HOSPITALIZACION") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+fviz_contrib(acm2,
+             choice = "var",
+             axes = 2) + 
+  labs(title = "CONTRIBUCIÓN DE LAS VARIABLES EN EL PRIMER EJE",
+       subtitle = "GRUPO DE VARIABLES RELACIONADAS CON PRUEBAS") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+En este caso, la contribución de las variables en los dos primeros ejes es muy baja, lo que indica que las variables no están altamente correlacionadas entre sí. Sin embargo cabe resaltar que las variables change, diabetesMed y readmitted son las que más influyen en el primer eje, mientras que las variables Raza, Genero y Edad son las que más influyen en el segundo eje.
+
+Ahora, la representación gráfica de los resultados obtenidos del ACM se muestra a continuación.
+
+```{r}
+fviz_mca_biplot(acm2, axes=c(1,2), 
+                repel = TRUE, label = "var",
+                ggtheme=theme_minimal())+ 
+  labs(title = "REPRESENTACIÓN DE LOS RESULTADOS OBTENIDOS DEL ACM",
+       subtitle = "GRUPO DE VARIABLES RELACIONADAS CON LA HOSPITALIZACIÓN") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10),
+        legend.position = "right")
+```
+
+De este grafico podemos mencionar que las variables change, diabetesMed y readmitted son las que más influyen en el primer eje, mientras que las variables Raza, Genero y Edad son las que más influyen en el segundo eje.
+
+
 # **AGRUPAMIENTO DE PACIENTES**
+
+Para el agrupamiento de pacientes se propone utilizar el algoritmo de K-means, que es un método de agrupamiento no supervisado que asigna cada observación a un grupo basado en la similitud de sus características. En este caso, se propone agrupar a los pacientes en función de sus características clínicas y demográficas, con el objetivo de identificar grupos de pacientes con características similares.
+
+Antes de eso, se propone un agrupamiento jerarquico para darnos idea de cuantos grupos podriamos tener. Como el conjunto de datos es demasiado grande, se tomara una muestra de 1000 pacientes para realizar el agrupamiento jerarquico.
+
+```{r}
+# Análisis de Componentes Principales (ACP)
+ACP <- dudi.pca(dat3[1:1000,1:5], scannf = FALSE, nf = 3)
+F <- as.matrix(ACP$li)
+
+# Clustering jerárquico con método de Ward
+hcl <- ward.cluster(dista = dist(F), h.clust = 1) 
+
+# Visualización del dendrograma con estética personalizada
+p <- fviz_dend(hcl, rect = TRUE, k_colors = "darkblue", show_labels = FALSE) 
+
+# Agregar línea horizontal manualmente con ggplot2
+p + 
+  annotate("segment", x = -Inf, xend = Inf, y = 0.25, yend = 0.25, 
+           linetype = "dashed", color = "red") +
+  labs(title = "DENDROGRAMA DE AGRUPAMIENTO JERÁRQUICO PARA LOS PACIENTES",
+       subtitle = "SUBMUESTRA ILUSTRATIVA DE LA POBLACIÓN") +
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5), 
+        plot.subtitle = element_text(size = 9, face = "bold", hjust = 0.5, color = "grey50"),
+        text = element_text(size = 10))
+
+```
+
+Con lo cual se puede observar que el dendrograma muestra que se pueden tener 5 grupos de pacientes, por lo que se propone realizar el agrupamiento con el algoritmo de K-means para 5 grupos.
+
+
+```{r eval=FALSE, include=FALSE}
+FactoClass(dat3[1:1000,1:5], dudi.pca,  nf = 6,  nfcl = 6, k.clust = 5, 
+                    scanFC = FALSE,  n.max = 5000, n.clus = 1000,  sign = 2.0,
+                    conso = TRUE, n.indi = 25 ) 
+```
+
