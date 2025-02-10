@@ -34,7 +34,9 @@ Este espacio esta dedicado al desarrollo de la tematica de la asignatura de Topi
 
   - [Rpubs:](https://rpubs.com/CapStats/Entrega1-AA-CC) Aquí se puede encontrar la version HTML subida a Rpubs para visualizar los resultados de esta primera entrega sin necesidad de renderizar el archivo .Rmd o descargar el HTML del repositorio.
      
-- [**Entrega 2**](https://github.com/CapStats-ML/Ciencia_de_Datos/tree/main/Entregas/Entrega2) Esta segunda entrega tiene como objetivo plantear toda la parte descriptiva Multivartada que sea útil para el desarrollo de curso y del proyecto final de la asignatura (En Construcción)
+- **Entrega 2**[Análisis exploratorio de datos multivariado](https://github.com/CapStats-ML/Ciencia_de_Datos/tree/main/Entregas/Entrega2) Esta segunda entrega tiene como objetivo plantear toda la parte descriptiva Multivartada que sea útil para el desarrollo de curso y del proyecto final de la asignatura (En Construcción)
+  
+  -  [Rpubs:](https://rpubs.com/CapStats/1266512) Aquí se puede encontrar la version HTML subida a Rpubs para visualizar los resultados de esta primera entrega sin necesidad de renderizar el archivo .Rmd o descargar el HTML del repositorio.
 
 ## PROYECTO
 
