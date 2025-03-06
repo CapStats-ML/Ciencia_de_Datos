@@ -13,10 +13,10 @@ options(ggrepel.max.overlaps = 40)
 
 setwd("~/REPOS GIT/Ciencia_de_Datos/Datos")
 data <- read_csv("data2.csv")
+data <- data[data$A1Cresult != "No",]
 
 # Muestrear cada 10 filas de los datos
-data <- data[seq(1, nrow(data), 2),]
-#data <- data[data$A1Cresult != "No",]
+data <- data[seq(1, nrow(data), 4),]
 Y <- data$readmitted
 
 #Ahora un prueba con otro muestreo probabilisisco
@@ -51,8 +51,8 @@ FA$eig
 # Probemos volviendo las varibales categoricas como dummies 
 
 data <- read_csv("data2.csv")
-data <- data[seq(1, nrow(data), 2),]
-#data <- data[data$A1Cresult != "No",]
+data <- data[data$A1Cresult != "No",]
+data <- data[seq(1, nrow(data), 4),]
 
 Num <- c("time_in_hospital", "num_lab_procedures", "num_medications",
          "num_procedures", "number_diagnoses")
